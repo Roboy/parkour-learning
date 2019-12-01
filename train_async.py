@@ -26,6 +26,7 @@ import gym
 
 def make(*args, info_example=None, **kwargs):
     import gym_parkour  # necessary to register yumi_reacher envs
+    import pybulletgym
     info_example = {'timeout': 0}
     return GymEnvWrapper(EnvInfoWrapper(
         gym.make(*args, **kwargs), info_example))
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--env_id', help='environment ID', default='ParkourChallenge-v0')
+    parser.add_argument('--env_id', help='environment ID', default='HopperPyBulletEnv-v0')
     parser.add_argument('--run_ID', help='run identifier (logging)', type=int, default=0)
     parser.add_argument('--cuda_idx', help='gpu to use ', type=int, default=None)
     args = parser.parse_args()
