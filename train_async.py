@@ -56,7 +56,7 @@ def build_and_train(env_id="Hopper-v3", run_ID=0, cuda_idx=None):
         max_decorrelation_steps=0,
         eval_n_envs=10,
         eval_max_steps=int(51e3),
-        eval_max_trajectories=50,
+        eval_max_trajectories=10,
     )
     algo = SAC()  # Run with defaults.
     agent = SacAgent()
@@ -64,14 +64,14 @@ def build_and_train(env_id="Hopper-v3", run_ID=0, cuda_idx=None):
         algo=algo,
         agent=agent,
         sampler=sampler,
-        n_steps=1e6,
-        log_interval_steps=1e4,
+        n_steps=1e7,
+        log_interval_steps=1e5,
         affinity=affinity
     )
     config = dict(env_id=env_id)
     name = "sac_" + env_id
     log_dir = os.path.join(LOG_DIR, 'parkour-training')
-    with logger_context(log_dir, run_ID, name, config):
+    with logger_context(log_dir, run_ID, name, config, snapshot_mode='last'):
         logger.set_tf_summary_writer(SummaryWriter(logger.get_snapshot_dir()))
         runner.train()
 
