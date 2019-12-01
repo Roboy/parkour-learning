@@ -17,6 +17,7 @@ from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.runners.async_rl import AsyncRlEval
 from rlpyt.utils.logging.context import logger_context
+from rlpyt.utils.launching.affinity import make_affinity
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
 from rlpyt.utils.logging import logger
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -31,12 +32,25 @@ def make(*args, info_example=None, **kwargs):
 
 
 def build_and_train(env_id="Hopper-v3", run_ID=0, cuda_idx=None):
+    affinity = make_affinity(
+        run_slot=0,
+        n_cpu_core=8,  # Use 16 cores across all experiments.
+        n_gpu=1,  # Use 8 gpus across all experiments.
+        gpu_per_run=1,
+        sample_gpu_per_run=0,
+        async_sample=True,
+        optim_sample_share_gpu=False,
+        # hyperthread_offset=16,  # If machine has 24 cores.
+        # n_socket=2,  # Presume CPU socket affinity to lower/upper half GPUs.
+        # gpu_per_run=2,  # How many GPUs to parallelize one run across.
+        # cpu_per_run=1,
+    )
     sampler = AsyncCpuSampler(
         EnvCls=make,
         env_kwargs=dict(id=env_id),
         eval_env_kwargs=dict(id=env_id),
         batch_T=1,  # One time-step per sampler iteration.
-        batch_B=1,  # One environment (i.e. sampler Batch dimension).
+        batch_B=7,  # One environment (i.e. sampler Batch dimension).
         max_decorrelation_steps=0,
         eval_n_envs=10,
         eval_max_steps=int(51e3),
@@ -50,7 +64,7 @@ def build_and_train(env_id="Hopper-v3", run_ID=0, cuda_idx=None):
         sampler=sampler,
         n_steps=1e6,
         log_interval_steps=1e4,
-        affinity=dict(cuda_idx=cuda_idx),
+        affinity=affinity
     )
     config = dict(env_id=env_id)
     name = "sac_" + env_id
