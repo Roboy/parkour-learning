@@ -7,7 +7,6 @@ from torch.utils.tensorboard.writer import SummaryWriter
 def config_logger(log_dir='./data', name='rlpyt_training', log_params=None, snapshot_mode="last"):
     logger.set_snapshot_mode(snapshot_mode)
     logger.set_log_tabular_only(False)
-    logger.set_tf_summary_writer(SummaryWriter(logger.get_snapshot_dir()))
 
     run_ID = 0
     while osp.exists(osp.join(log_dir, "run_" + str(run_ID))):
@@ -23,6 +22,7 @@ def config_logger(log_dir='./data', name='rlpyt_training', log_params=None, snap
     logger.add_text_output(text_log_file)
     logger.add_tabular_output(tabular_log_file)
     logger.push_prefix(f"{name}_{run_ID} ")
+    logger.set_tf_summary_writer(SummaryWriter(exp_dir))
 
     if log_params is None:
         log_params = dict()
