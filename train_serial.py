@@ -16,6 +16,7 @@ from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.utils.logging.context import logger_context, LOG_DIR
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
+from logger_context import config_logger
 from rlpyt.utils.logging import logger
 from torch.utils.tensorboard.writer import SummaryWriter
 import gym
@@ -51,12 +52,8 @@ def build_and_train(env_id="Hopper-v3", run_ID=0, cuda_idx=None):
         log_interval_steps=1e4,
         affinity=dict(cuda_idx=cuda_idx),
     )
-    config = dict(env_id=env_id)
-    name = "sac_" + env_id
-    log_dir = os.path.join(LOG_DIR, 'parkour-training')
-    with logger_context(log_dir, run_ID, name, config, snapshot_mode='last'):
-        logger.set_tf_summary_writer(SummaryWriter(logger.get_snapshot_dir()))
-        runner.train()
+    config_logger('./data', name='parkour-training', snapshot_mode='last')
+    runner.train()
 
 
 if __name__ == "__main__":

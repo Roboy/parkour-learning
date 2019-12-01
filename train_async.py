@@ -16,7 +16,7 @@ from rlpyt.algos.qpg.sac import SAC
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.runners.async_rl import AsyncRlEval
-from rlpyt.utils.logging.context import logger_context, LOG_DIR
+from logger_context import config_logger
 import os
 from rlpyt.utils.launching.affinity import make_affinity
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
@@ -68,12 +68,8 @@ def build_and_train(env_id="Hopper-v3", run_ID=0, cuda_idx=None):
         log_interval_steps=1e5,
         affinity=affinity
     )
-    config = dict(env_id=env_id)
-    name = "sac_" + env_id
-    log_dir = os.path.join(LOG_DIR, 'parkour-training')
-    with logger_context(log_dir, run_ID, name, config, snapshot_mode='last'):
-        logger.set_tf_summary_writer(SummaryWriter(logger.get_snapshot_dir()))
-        runner.train()
+    config_logger('./data', name='parkour-training', snapshot_mode='last')
+    runner.train()
 
 
 if __name__ == "__main__":
