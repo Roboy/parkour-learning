@@ -23,7 +23,6 @@ from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
 from rlpyt.algos.pg.ppo import PPO
 from rlpyt.agents.pg.mujoco import MujocoLstmAgent
 from torch.utils.tensorboard.writer import SummaryWriter
-from vision_models import PiMlpModel
 import gym
 import torch
 import GPUtil
@@ -68,20 +67,15 @@ def build_and_train(slot_affinity_code='1slt_2cpu_0gpu_1cpr_4hto', log_dir='./da
     if num_gpus > 0:
         SamplerClass = AsyncCpuSampler
         RunnerClass = AsyncRlEval
-        affinity['async_sample'] = True
-        # affinity = make_affinity(
-        #     run_slot=0,
-        #     n_cpu_core=8,  # Use 16 cores across all experiments.
-        #     n_gpu=1,  # Use 8 gpus across all experiments.
-        #     gpu_per_run=1,
-        #     sample_gpu_per_run=0,
-        #     async_sample=True,
-        #     optim_sample_share_gpu=False,
-        #     # hyperthread_offset=16,  # If machine has 24 cores.
-        #     # n_socket=2,  # Presume CPU socket affinity to lower/upper half GPUs.
-        #     # gpu_per_run=2,  # How many GPUs to parallelize one run across.
-        #     # cpu_per_run=1,
-        # )
+        affinity = make_affinity(
+            run_slot=0,
+            n_cpu_core=8,  # Use 16 cores across all experiments.
+            n_gpu=1,  # Use 8 gpus across all experiments.
+            gpu_per_run=1,
+            sample_gpu_per_run=0,
+            async_sample=True,
+            optim_sample_share_gpu=False,
+        )
     else:
         # affinity=dict() # ;dict(cuda_idx=cuda_idx),
         SamplerClass = SerialSampler
@@ -125,7 +119,7 @@ def build_and_train(slot_affinity_code='1slt_2cpu_0gpu_1cpr_4hto', log_dir='./da
         log_interval_steps=1e5,
         affinity=affinity
     )
-    config_logger('./data', name='parkour-training', snapshot_mode='last')
+    config_logger(log_dir, name='parkour-training', snapshot_mode='last')
     runner.train()
 
 
