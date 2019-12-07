@@ -13,6 +13,7 @@ def config_logger(log_dir='./data', name='rlpyt_training', log_params=None, snap
         run_ID += 1
     log_dir = osp.join(log_dir, f"run_{run_ID}")
     exp_dir = osp.abspath(log_dir)
+    print('exp_dir: ' + exp_dir)
 
     tabular_log_file = osp.join(exp_dir, "progress.csv")
     text_log_file = osp.join(exp_dir, "debug.log")
