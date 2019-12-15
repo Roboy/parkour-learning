@@ -32,14 +32,14 @@ affinity_code = encode_affinity(
     # hyperthread_offset=8,  # if auto-detect doesn't work, number of CPU cores
     # n_socket=1,  # if auto-detect doesn't work, can force (or force to 1)
     cpu_per_run=8,
-    gpu_per_run=0,  # min(num_gpus, 1),
+    gpu_per_run=min(num_gpus, 1),  # min(num_gpus, 1),
     set_affinity=True,  # it can help to restrict workers to individual CPUs
 )
 # Or try an automatic one, but results may vary:
 # affinity_code = quick_affinity_code(n_parallel=None, use_gpu=True)
 
 runs_per_setting = 1
-experiment_title = "pc"
+experiment_title = "parkour_challenge"
 variant_levels = list()
 
 # Within a variant level, list each combination explicitly.
