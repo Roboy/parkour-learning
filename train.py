@@ -66,22 +66,6 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         agent_state_dict = snapshot['agent_state_dict']
         optimizer_state_dict = snapshot['optimizer_state_dict']
 
-    # if serial_mode:
-    #     SamplerClass = SerialSampler
-    #     RunnerClass = MinibatchRlEval
-    # else:
-    #     SamplerClass = AsyncCpuSampler
-    #     RunnerClass = AsyncRlEval
-    #     affinity['alternating'] = False
-    #     affinity = make_affinity(
-    #         run_slot=0,
-    #         n_cpu_core=8,  # Use 16 cores across all experiments.
-    #         n_gpu=1,  # Use 8 gpus across all experiments.
-    #         gpu_per_run=1,
-    #         sample_gpu_per_run=0,
-    #         async_sample=True,
-    #         optim_sample_share_gpu=False,
-    #     )
     if config['algo'] == 'ppo':
         AgentClass = MujocoLstmAgent
         AlgoClass = PPO
@@ -91,13 +75,21 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
     elif config['algo'] == 'sac':
         AgentClass = SacAgent
         AlgoClass = SAC
+        SamplerClass = AsyncCpuSampler
+        RunnerClass = AsyncRlEval
+        # create new affinity because async_sample has to be set
+        affinity= make_affinity(
+            n_cpu_core=len(affinity['master_cpus']),  # Use 16 cores across all experiments.
+            n_gpu=1,
+            async_sample=True,
+        )
         algo_kwargs = config['sac_kwargs']
 
     if serial_mode:
         SamplerClass = SerialSampler
         RunnerClass = MinibatchRlEval
-    config['runner_kwargs']['log_interval_steps'] = 1e3
-    print(affinity)
+        config['runner_kwargs']['log_interval_steps'] = 1e3
+
     sampler = SamplerClass(
         **config['sampler_kwargs'],
         EnvCls=make,
