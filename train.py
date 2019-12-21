@@ -37,14 +37,14 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot_file: str = None, serial_mode=True):
     config = dict(
         sac_kwargs=dict(learning_rate=7e-4, batch_size=256),
-        ppo_kwargs=dict(minibatches=4),
-        sampler_kwargs=dict(batch_T=5, batch_B=7, env_kwargs=dict(id="ParkourChallenge-v0"),
+        ppo_kwargs=dict(minibatches=16),
+        sampler_kwargs=dict(batch_T=5, batch_B=16, env_kwargs=dict(id="ParkourChallenge-v0"),
                             eval_n_envs=10,
                             eval_max_steps=int(1e3),
                             eval_max_trajectories=10),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot_file=snapshot_file,
-        algo='sac'
+        algo='ppo'
     )
 
     if slot_affinity_code is None:
@@ -79,12 +79,15 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         if not serial_mode:
             SamplerClass = AsyncCpuSampler
             RunnerClass = AsyncRlEval
+            affinity['cuda_idx'] = 0
             # create new affinity because async_sample has to be set
-            affinity= make_affinity(
-                n_cpu_core=len(affinity['master_cpus']),  # Use 16 cores across all experiments.
-                n_gpu=1,
-                async_sample=True,
-            )
+            print('affinity: '  + str(affinity))
+            # affinity= make_affinity(
+            #     n_cpu_core=len(affinity['all_cpus'])//2,  # Use 16 cores across all experiments.
+            #     n_gpu=1,
+            #     async_sample=True,
+            # )
+            # print('affinity after: '  + str(affinity))
 
     if serial_mode:
         SamplerClass = SerialSampler
