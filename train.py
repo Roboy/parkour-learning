@@ -37,7 +37,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot_file: str = None, serial_mode=True):
     config = dict(
         sac_kwargs=dict(learning_rate=7e-4, batch_size=256),
-        ppo_kwargs=dict(),
+        ppo_kwargs=dict(minibatches=4),
         sampler_kwargs=dict(batch_T=5, batch_B=7, env_kwargs=dict(id="ParkourChallenge-v0"),
                             eval_n_envs=10,
                             eval_max_steps=int(1e3),
@@ -75,15 +75,16 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
     elif config['algo'] == 'sac':
         AgentClass = SacAgent
         AlgoClass = SAC
-        SamplerClass = AsyncCpuSampler
-        RunnerClass = AsyncRlEval
-        # create new affinity because async_sample has to be set
-        affinity= make_affinity(
-            n_cpu_core=len(affinity['master_cpus']),  # Use 16 cores across all experiments.
-            n_gpu=1,
-            async_sample=True,
-        )
         algo_kwargs = config['sac_kwargs']
+        if not serial_mode:
+            SamplerClass = AsyncCpuSampler
+            RunnerClass = AsyncRlEval
+            # create new affinity because async_sample has to be set
+            affinity= make_affinity(
+                n_cpu_core=len(affinity['master_cpus']),  # Use 16 cores across all experiments.
+                n_gpu=1,
+                async_sample=True,
+            )
 
     if serial_mode:
         SamplerClass = SerialSampler
@@ -93,7 +94,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
     sampler = SamplerClass(
         **config['sampler_kwargs'],
         EnvCls=make,
-        eval_env_kwargs=dict(id='ParkourChallenge-v0'),
+        eval_env_kwargs=config['sampler_kwargs']['env_kwargs']
     )
     algo = AlgoClass(**algo_kwargs, initial_optim_state_dict=optimizer_state_dict)
     agent = AgentClass(initial_model_state_dict=agent_state_dict)
@@ -109,7 +110,6 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
 
 
 if __name__ == "__main__":
-    print(sys.argv)
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, conflict_handler='resolve')
     parser.add_argument('slot_affinity_code', nargs='?', default=None,
                         help='using all possible resources when not specified')
@@ -126,6 +126,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     log_dir = args.log_dir or args.log_dir_positional or './data'
-    print(args)
+    print("training started with parameters: " + str(args))
     build_and_train(slot_affinity_code=args.slot_affinity_code, log_dir=log_dir, run_ID=args.run_id,
                     snapshot_file=args.snapshot_file, serial_mode=args.serial_mode)
