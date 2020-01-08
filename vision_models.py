@@ -106,7 +106,7 @@ class PiVisionModel(torch.nn.Module):
         robot_state_out = 256
         self.robot_state_mlp = MlpModel(
             input_size=robot_state_shape,
-            hidden_sizes=[256, ],
+            hidden_sizes=[],
             output_size=robot_state_out
         )
         self.mu_head = MlpModel(
@@ -154,22 +154,17 @@ class QofMuVisionModel(torch.nn.Module):
         robot_state_shape = observation_shape.robot_state[0]
         self.conv = Conv2dModel(
             in_channels=self.channels,
-            channels=[9, 18],
-            kernel_sizes=[3, 3],
-            strides=[2, 2],
+            channels=[8, 20],
+            kernel_sizes=[5, 4],
+            strides=[3, 3],
             paddings=[1, 1],
         )
         conv_out_size = self.conv.conv_out_size(self.height, self.width)
         robot_state_out = 256
         self.robot_state_mlp = MlpModel(
             input_size=robot_state_shape,
-            hidden_sizes=[256, ],
+            hidden_sizes=[],
             output_size=robot_state_out
-        )
-        self.mu_head = MlpModel(
-            input_size=robot_state_out + conv_out_size,
-            hidden_sizes=[256, ],
-            output_size=action_size
         )
         self.q_head = MlpModel(
             input_size=robot_state_out + conv_out_size + action_size,
