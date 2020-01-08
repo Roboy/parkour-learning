@@ -171,15 +171,15 @@ class QofMuVisionModel(torch.nn.Module):
             hidden_sizes=[256, ],
             output_size=action_size
         )
-        self.value_head = MlpModel(
-            input_size=robot_state_out + conv_out_size,
+        self.q_head = MlpModel(
+            input_size=robot_state_out + conv_out_size + action_size,
             hidden_sizes=[256, ],
             output_size=1
         )
         init_log_std = 0.
         self.log_std = torch.nn.Parameter(init_log_std * torch.ones(action_size))
 
-    def forward(self, observation, prev_action, prev_reward):
+    def forward(self, observation, prev_action, prev_reward, action):
         """Feedforward layers process as [T*B,H]. Return same leading dims as
         input, can be [T,B], [B], or []."""
 
@@ -190,8 +190,10 @@ class QofMuVisionModel(torch.nn.Module):
         camera_obs_flat = observation.camera.view(T * B, self.channels, self.height, self.width)
         robot_state = self.robot_state_mlp(robot_state_obs_flat)
         cnn_out = self.conv(camera_obs_flat).view(T * B, -1)  # apply conv and flatten afterwards
-        mlp_head_in = torch.cat((robot_state, cnn_out), -1)
-        q = self.value_head(mlp_head_in).squeeze(-1)
+        # q_input = torch.cat(
+        #     [observation.view(T * B, -1), action.view(T * B, -1)], dim=1)
+        mlp_head_in = torch.cat((robot_state, cnn_out, action.view(T*B, -1)), -1)
+        q = self.q_head(mlp_head_in).squeeze(-1)
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         q = restore_leading_dims(q, lead_dim, T, B)
