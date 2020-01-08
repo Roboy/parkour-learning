@@ -1,4 +1,3 @@
-import sys
 from rlpyt.samplers.serial.sampler import SerialSampler
 from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.cpu.sampler import CpuSampler, CpuResetCollector
@@ -9,12 +8,10 @@ from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.runners.async_rl import AsyncRlEval
 from logger_context import config_logger
-import os
 from rlpyt.utils.launching.affinity import make_affinity
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
 from rlpyt.algos.pg.ppo import PPO
-from rlpyt.agents.pg.mujoco import MujocoLstmAgent
-from torch.utils.tensorboard.writer import SummaryWriter
+from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
 import gym
 import torch
 import GPUtil
@@ -22,7 +19,9 @@ import multiprocessing
 from rlpyt.models.pg.mujoco_lstm_model import MujocoLstmModel
 from rlpyt.utils.launching.affinity import affinity_from_code
 from rlpyt.utils.launching.variant import load_variant, update_config
+from vision_models import PiVisionModel, QofMuVisionModel
 import argparse
+from vision_models import VisionFfModel
 
 
 def make(*args, info_example=None, **kwargs):
@@ -36,15 +35,16 @@ def make(*args, info_example=None, **kwargs):
 def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot_file: str = None, serial_mode=True):
     config = dict(
-        sac_kwargs=dict(learning_rate=7e-4, batch_size=256),
-        ppo_kwargs=dict(minibatches=16),
-        sampler_kwargs=dict(batch_T=5, batch_B=16, env_kwargs=dict(id="ParkourChallenge-v0"),
+        sac_kwargs=dict(learning_rate=7e-4, batch_size=256, replay_size=1e3),
+        ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, value_loss_coeff=0.01, linear_lr_schedule=False),
+        sampler_kwargs=dict(batch_T=5, batch_B=64, env_kwargs=dict(id="ParkourChallenge-v0"),
                             eval_n_envs=10,
                             eval_max_steps=int(1e3),
                             eval_max_trajectories=10),
-        runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
+        agent_args=dict(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel),
+        runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e3),
         snapshot_file=snapshot_file,
-        algo='ppo'
+        algo='sac'
     )
 
     if slot_affinity_code is None:
@@ -67,7 +67,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         optimizer_state_dict = snapshot['optimizer_state_dict']
 
     if config['algo'] == 'ppo':
-        AgentClass = MujocoLstmAgent
+        AgentClass = MujocoFfAgent
         AlgoClass = PPO
         RunnerClass = MinibatchRlEval
         SamplerClass = CpuSampler
@@ -100,7 +100,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         eval_env_kwargs=config['sampler_kwargs']['env_kwargs']
     )
     algo = AlgoClass(**algo_kwargs, initial_optim_state_dict=optimizer_state_dict)
-    agent = AgentClass(initial_model_state_dict=agent_state_dict)
+    agent = AgentClass(initial_model_state_dict=agent_state_dict, **config['agent_args'])
     runner = RunnerClass(
         **config['runner_kwargs'],
         algo=algo,
