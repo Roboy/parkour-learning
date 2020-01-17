@@ -44,7 +44,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                                 eval_max_steps=int(1e3),
                                 eval_max_trajectories=10),
         agent_args=dict(), #dict(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel),
-        runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e3),
+        runner_kwargs=dict(n_steps=1e9, log_interval_steps=3e4),
         snapshot_file=snapshot_file,
         algo='sac'
     )
