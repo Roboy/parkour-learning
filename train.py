@@ -20,6 +20,7 @@ from rlpyt.models.pg.mujoco_lstm_model import MujocoLstmModel
 from rlpyt.utils.launching.affinity import affinity_from_code
 from rlpyt.utils.launching.variant import load_variant, update_config
 from vision_models import PiVisionModel, QofMuVisionModel
+from robot_traj_info import RobotTrajInfo
 import argparse
 from vision_models import VisionFfModel
 
@@ -37,10 +38,11 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
     config = dict(
         sac_kwargs=dict(learning_rate=7e-4, batch_size=256, replay_size=1e3),
         ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, value_loss_coeff=0.01, linear_lr_schedule=False),
-        sampler_kwargs=dict(batch_T=5, batch_B=16, env_kwargs=dict(id="ParkourChallenge-v0"),
-                            eval_n_envs=10,
-                            eval_max_steps=int(1e3),
-                            eval_max_trajectories=10),
+        sampler_kwargs=dict(batch_T=5, batch_B=16, TrajInfoCls=RobotTrajInfo,
+                            env_kwargs=dict(id="ParkourChallenge-v0"),
+                                eval_n_envs=10,
+                                eval_max_steps=int(1e3),
+                                eval_max_trajectories=10),
         agent_args=dict(), #dict(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e3),
         snapshot_file=snapshot_file,
