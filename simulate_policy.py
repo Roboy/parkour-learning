@@ -18,8 +18,8 @@ def simulate_policy(path_to_params, vision=False):
     agent_state_dict = snapshot['agent_state_dict']
     optimizer_state_dict = snapshot['optimizer_state_dict']
 
-    # agent = SacAgent()
-    agent = SacAgent(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel)
+    agent = SacAgent()
+    # agent = SacAgent(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel)
     # agent = MujocoLstmAgent()
     # agent = MujocoFfAgent()
     env = GymEnvWrapper(gym.make('ParkourChallenge-v0', render=True, vision=vision))
