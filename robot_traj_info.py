@@ -1,5 +1,6 @@
 from rlpyt.utils.collections import AttrDict
 
+
 class RobotTrajInfo(AttrDict):
     """
     Because it inits as an AttrDict, this has the methods of a dictionary,
@@ -18,6 +19,7 @@ class RobotTrajInfo(AttrDict):
         self.NonzeroRewards = 0
         self.DiscountedReturn = 0
         self._cur_discount = 1
+        self.env_info = dict()
 
     def step(self, observation, action, reward, done, agent_info, env_info):
         self.Length += 1
@@ -26,11 +28,14 @@ class RobotTrajInfo(AttrDict):
         self.DiscountedReturn += self._cur_discount * reward
         self._cur_discount *= self._discount
         for key, value in env_info._asdict().items():
-            if hasattr(self, key):
-                old_value = self.__getattribute__(key)
-                self.__setattr__(key, old_value + value)
+            if key in self.env_info:
+                self.env_info[key].append(value)
             else:
-                self.__setattr__(key, value)
+                self.env_info[key] = [value]
 
     def terminate(self, observation):
+        for key, value_list in self.env_info.items():
+            self.__setattr__(key, sum(value_list) / len(value_list))
+            self.__setattr__(key + '_traj_sum', sum(value_list))
+        del self.env_info  # has to be deleted because rlpyt assumes this object doesn't contain dicts
         return self
