@@ -111,7 +111,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         sampler=sampler,
         affinity=affinity
     )
-    config_logger(log_dir, name='parkour-training', snapshot_mode='last')
+    config_logger(log_dir, name='parkour-training', snapshot_mode='best')
     runner.train()
 
 
