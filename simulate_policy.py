@@ -39,6 +39,8 @@ def simulate_policy(path_to_params, vision=False):
         done = False
         prev_action = env.action_space.sample() * 0
         prev_reward = 0
+        step = 0
+        reward_sum = 0
         while not done:
             # action = env.action_space.sample()
             # if type(obs) == dict:
@@ -51,10 +53,14 @@ def simulate_policy(path_to_params, vision=False):
             # action = agent.step(*agent_inputs).action.numpy()
             act_pyt, agent_info = agent.step(obs_pyt, act_pyt, rew_pyt)
             action = numpify_buffer(act_pyt)
+            start = time.time()
             obs, reward, done, info = env.step(action[0])
+            reward_sum += reward
+            # print(info)
             observation[0] = obs
-            # time.sleep(0.11)
+            time.sleep(0.03)
             env.render(mode='human')
+        print('return: ' + str(reward_sum))
 
 
 if __name__ == "__main__":
