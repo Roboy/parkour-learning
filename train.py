@@ -36,11 +36,12 @@ def make(*args, info_example=None, **kwargs):
 def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot_file: str = None, serial_mode=True):
     config = dict(
-        sac_kwargs=dict(learning_rate=7e-4, batch_size=256, replay_size=1e3),
+        sac_kwargs=dict(learning_rate=7e-4, batch_size=2048, replay_size=1e6),
         ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, value_loss_coeff=0.01, linear_lr_schedule=False),
         sampler_kwargs=dict(batch_T=5, batch_B=16, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="ParkourChallenge-v0"),
                             eval_n_envs=10,
+                            eval_max_steps=1e5,
                             eval_max_trajectories=10),
         agent_args=dict(),  # dict(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=3e4),
