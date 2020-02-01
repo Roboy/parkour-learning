@@ -28,6 +28,7 @@ from vision_models import VisionFfModel
 def make(*args, info_example=None, **kwargs):
     import gym_parkour
     import pybulletgym
+    import parkour_learning
     info_example = {'timeout': 0}
     return GymEnvWrapper(EnvInfoWrapper(
         gym.make(*args, **kwargs), info_example))
@@ -36,10 +37,10 @@ def make(*args, info_example=None, **kwargs):
 def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot_file: str = None, serial_mode=True):
     config = dict(
-        sac_kwargs=dict(learning_rate=3e-4, batch_size=2048, replay_size=1e6, discount=0.9988),
+        sac_kwargs=dict(learning_rate=3e-4, batch_size=2048, replay_size=1e6, discount=0.99),
         ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, value_loss_coeff=0.01, linear_lr_schedule=False),
         sampler_kwargs=dict(batch_T=5, batch_B=16, TrajInfoCls=RobotTrajInfo,
-                            env_kwargs=dict(id="ParkourChallenge-v0"),
+                            env_kwargs=dict(id="HumanoidDeepMimicBulletEnv-v1"),
                             eval_n_envs=10,
                             eval_max_steps=1e6,
                             eval_max_trajectories=10),

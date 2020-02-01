@@ -66,7 +66,7 @@ def simulate_policy(path_to_params, vision=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--path', help='path to params.pkl',
-                        default='/home/alex/parkour-learning/data/params.pkl')
+                        default='/home/alex/parkour-learning/bullet_data/params.pkl')
     parser.add_argument('--vision', dest='vision', action='store_true',
                         help='if vision, observations will contain camera images')
     parser.add_argument('--no_vision', dest='vision', action='store_false',

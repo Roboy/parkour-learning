@@ -4,7 +4,7 @@ import json
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
-def config_logger(log_dir='./data', name='rlpyt_training', log_params=None, snapshot_mode="last"):
+def config_logger(log_dir='./bullet_data', name='rlpyt_training', log_params=None, snapshot_mode="last"):
     logger.set_snapshot_mode(snapshot_mode)
     logger.set_log_tabular_only(False)
 
