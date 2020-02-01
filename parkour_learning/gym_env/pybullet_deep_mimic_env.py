@@ -49,7 +49,7 @@ class PyBulletDeepMimicEnv(gym.Env):
     def step(self, action):
         self._humanoid.computeAndApplyPDForces(action, [10] * self.action_dim)
 
-        for i in range(1):
+        for i in range(4):
             self.step_in_episode += 1
             self._humanoid.step_kin_model(self.step_in_episode)
             self._pybullet_client.stepSimulation()
