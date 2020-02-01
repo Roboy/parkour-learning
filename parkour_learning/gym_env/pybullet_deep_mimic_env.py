@@ -47,11 +47,10 @@ class PyBulletDeepMimicEnv(gym.Env):
         return np.array(self._humanoid.getState())
 
     def step(self, action):
-        self._humanoid.computeAndApplyPDForces(action, [10] * self.action_dim)
-
-        for i in range(4):
+        for i in range(self.action_repeat):
             self.step_in_episode += 1
             self._humanoid.step_kin_model(self.step_in_episode)
+            self._humanoid.computeAndApplyPDForces(action, [10] * self.action_dim)
             self._pybullet_client.stepSimulation()
 
         observation = np.array(self._humanoid.getState())
