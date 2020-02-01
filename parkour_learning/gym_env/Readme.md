@@ -1,0 +1,1 @@
+A large part of this folder is copied from Bullet (https://github.com/bulletphysics/bullet3)
