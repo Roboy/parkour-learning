@@ -17,7 +17,7 @@ class PyBulletDeepMimicEnv(gym.Env):
     def __init__(self, mocap_file_path='humanoid3d_jump.txt', render=False):
         self.render = render
         self.action_dim = 43
-        self.obs_dim = 68
+        self.obs_dim = 197
         high = np.ones([self.action_dim])
         self.action_space = gym.spaces.Box(-high, high)
         high = np.inf * np.ones([self.obs_dim])
@@ -43,6 +43,7 @@ class PyBulletDeepMimicEnv(gym.Env):
     def reset(self):
         self.step_in_episode = 0
         self._humanoid.resetPose()
+        return np.array(self._humanoid.getState())
 
     def step(self, action):
         self._humanoid.computeAndApplyPDForces(action, [10] * self.action_dim)
@@ -54,7 +55,7 @@ class PyBulletDeepMimicEnv(gym.Env):
             self._humanoid.step_kin_model(self.step_in_episode)
             self._pybullet_client.stepSimulation()
 
-        observation = self._humanoid.getState()
+        observation = np.array(self._humanoid.getState())
         reward = self._humanoid.getReward()
         done = False
         return observation, reward, done, {}
