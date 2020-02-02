@@ -35,7 +35,7 @@ class PyBulletDeepMimicEnv(gym.Env):
         self._pybullet_client.setGravity(0, -9.8, 0)
         self._pybullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.9)
         mocap_data = MotionCaptureData(mocap_file_path)
-        self.timestep_length = 1 / 240
+        self.timestep_length = 1 / 100 # 240
         self._humanoid = HumanoidStablePD(self._pybullet_client, mocap_data, self.timestep_length, False)
         self._pybullet_client.setTimeStep(self.timestep_length)
         self.time_in_episode = 0
@@ -63,7 +63,7 @@ class PyBulletDeepMimicEnv(gym.Env):
 
         observation = np.array(self._humanoid.getState())
         reward = self._humanoid.getReward()
-        done = reward < 0.2
+        done = reward < 0.4
         return observation, reward, done, {}
 
     def render(self, mode='human'):
