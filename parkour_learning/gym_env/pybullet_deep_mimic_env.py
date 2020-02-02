@@ -38,18 +38,18 @@ class PyBulletDeepMimicEnv(gym.Env):
         self.timestep_length = 1 / 240
         self._humanoid = HumanoidStablePD(self._pybullet_client, mocap_data, self.timestep_length, False)
         self._pybullet_client.setTimeStep(self.timestep_length)
-        self.step_in_episode = 0
+        self.time_in_episode = 0
         self.action_repeat = 4
 
     def reset(self):
-        self.step_in_episode = 0
+        self.time_in_episode = 0
         self._humanoid.resetPose()
         return np.array(self._humanoid.getState())
 
     def step(self, action):
         for i in range(self.action_repeat):
-            self.step_in_episode += 1
-            self._humanoid.step_kin_model(self.step_in_episode)
+            self.time_in_episode += self.timestep_length
+            self._humanoid.step_kin_model(self.time_in_episode)
             self._humanoid.computeAndApplyPDForces(action, [10] * self.action_dim)
             self._pybullet_client.stepSimulation()
 
