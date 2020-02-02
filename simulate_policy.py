@@ -32,6 +32,7 @@ def simulate_policy(path_to_params, vision=False):
     agent = SacAgent(**agent_kwargs)
     agent.initialize(env_spaces=env.spaces)
     agent.load_state_dict(agent_state_dict)
+    agent.eval_mode(0)
     obs = env.reset()
     observation = buffer_from_example(obs, 1)
 
