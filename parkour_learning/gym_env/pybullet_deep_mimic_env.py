@@ -55,7 +55,7 @@ class PyBulletDeepMimicEnv(gym.Env):
 
         observation = np.array(self._humanoid.getState())
         reward = self._humanoid.getReward()
-        done = reward < 0.4
+        done = reward < 0.2
         return observation, reward, done, {}
 
     def render(self, mode='human'):
