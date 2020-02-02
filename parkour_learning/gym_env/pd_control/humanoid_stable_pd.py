@@ -153,10 +153,11 @@ class HumanoidStablePD(object):
         self.resetPose()
 
     def resetPose(self):
-        # print("resetPose with self._frame=", self._frame, " and self._frameFraction=",self._frameFraction)
+        self.setSimTime(0)
+        # self._frameFraction = 0
         pose = self.computePose(self._frameFraction)
-        self.initializePose(self._poseInterpolator, self._sim_model, initBase=True)
         self.initializePose(self._poseInterpolator, self._kin_model, initBase=True)  # False)
+        self.initializePose(self._poseInterpolator, self._sim_model, initBase=True)
 
     def initializePose(self, pose, phys_model, initBase, initializeVelocity=True):
         useArray = True
@@ -164,6 +165,7 @@ class HumanoidStablePD(object):
             if initBase:
                 self._pybullet_client.resetBasePositionAndOrientation(phys_model, pose._basePos,
                                                                       pose._baseOrn)
+                # print('reset to position: ' + str(pose._basePos))
                 self._pybullet_client.resetBaseVelocity(phys_model, pose._baseLinVel, pose._baseAngVel)
             if useArray:
                 indices = [chest, neck, rightHip, rightKnee,
@@ -306,8 +308,8 @@ class HumanoidStablePD(object):
         pose = self._poseInterpolator.ConvertFromAction(self._pybullet_client, action)
         return pose
 
-    def step_kin_model(self, step_in_episode):
-        self.setSimTime(step_in_episode * self._time_step_length)
+    def step_kin_model(self, time_in_episode):
+        self.setSimTime(time_in_episode)
         kinPose = self.computePose(self._frameFraction) # has to be computed here
         self.initializePose(self._poseInterpolator,
                             self._kin_model,
