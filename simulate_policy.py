@@ -3,6 +3,7 @@ import torch
 import time
 import gym  # open ai gym
 import numpy as np
+import parkour_learning
 import pybulletgym  # register PyBullet enviroments with open ai gym
 import gym_parkour
 from rlpyt.agents.qpg.sac_agent import SacAgent
@@ -22,16 +23,19 @@ def simulate_policy(path_to_params, vision=False):
     # agent = SacAgent(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel)
     # agent = MujocoLstmAgent()
     # agent = MujocoFfAgent()
-    env = GymEnvWrapper(gym.make('ParkourChallenge-v0', render=True, vision=vision))
+    # env = GymEnvWrapper(gym.make('ParkourChallenge-v0', render=True, vision=vision))
+    env = GymEnvWrapper(gym.make('HumanoidDeepMimicBulletEnv-v1', render=True))
     # env = gym.make('HopperPyBulletEnv-v0')
-    env.render(mode='human')
+    # env.render(mode='human')
     # wrapped_env = GymEnvWrapper(env)
+    agent_kwargs = dict(model_kwargs=dict(hidden_sizes=[1024, 512]), q_model_kwargs=dict(hidden_sizes=[1024, 512]))
+    agent = SacAgent(**agent_kwargs)
     agent.initialize(env_spaces=env.spaces)
     agent.load_state_dict(agent_state_dict)
+    obs = env.reset()
+    observation = buffer_from_example(obs, 1)
 
     while True:
-        obs = env.reset()
-        observation = buffer_from_example(obs, 1)
         observation[0] = env.reset()
         action = buffer_from_example(env.action_space.null_value(), 1)
         reward = np.zeros(1, dtype="float32")
@@ -51,6 +55,7 @@ def simulate_policy(path_to_params, vision=False):
             # agent_inputs = torchify_buffer(AgentInputs(obs, prev_action, prev_reward))
             # action = agent.pi(obs, None, None)[0].detach().numpy()
             # action = agent.step(*agent_inputs).action.numpy()
+            step += 1
             act_pyt, agent_info = agent.step(obs_pyt, act_pyt, rew_pyt)
             action = numpify_buffer(act_pyt)
             start = time.time()
@@ -58,15 +63,15 @@ def simulate_policy(path_to_params, vision=False):
             reward_sum += reward
             # print(info)
             observation[0] = obs
-            time.sleep(0.03)
-            env.render(mode='human')
-        print('return: ' + str(reward_sum))
+            time.sleep(0.08)
+            # env.render(mode='human')
+        print('return: ' + str(reward_sum) + '  num_steps: ' + str(step))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--path', help='path to params.pkl',
-                        default='/home/alex/parkour-learning/bullet_data/params.pkl')
+                        default='/home/alex/parkour-learning/data/params.pkl')
     parser.add_argument('--vision', dest='vision', action='store_true',
                         help='if vision, observations will contain camera images')
     parser.add_argument('--no_vision', dest='vision', action='store_false',
