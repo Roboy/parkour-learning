@@ -68,7 +68,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
 
     agent_state_dict = optimizer_state_dict = None
     if config['snapshot_file'] is not None:
-        snapshot = torch.load(config['snapshot_file'])
+        snapshot = torch.load(config['snapshot_file'], map_location=torch.device('cpu'))
         agent_state_dict = snapshot['agent_state_dict']
         optimizer_state_dict = snapshot['optimizer_state_dict']
 
