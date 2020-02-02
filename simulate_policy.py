@@ -65,7 +65,7 @@ def simulate_policy(path_to_params, vision=False):
             # print(info)
             observation[0] = obs
             time.sleep(0.08)
-            # env.render(mode='human')
+            env.render(mode='human')
         print('return: ' + str(reward_sum) + '  num_steps: ' + str(step))
 
 
