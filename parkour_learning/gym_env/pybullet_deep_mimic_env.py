@@ -5,7 +5,7 @@ import os
 from pybullet_utils import bullet_client
 import time
 import pybullet_data
-import pybullet as p1
+import pybullet
 import random
 import gym, gym.spaces, gym.utils
 from parkour_learning.gym_env.motion_capture_data import MotionCaptureData
@@ -23,10 +23,10 @@ class PyBulletDeepMimicEnv(gym.Env):
         high = np.inf * np.ones([self.obs_dim])
         self.observation_space = gym.spaces.Box(-high, high)
         if self.render:
-            self._pybullet_client = bullet_client.BulletClient(connection_mode=p1.GUI)
+            self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.GUI)
             self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
         else:
-            self._pybullet_client = bullet_client.BulletClient()
+            self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.DIRECT)
         self._pybullet_client.setAdditionalSearchPath(os.path.dirname(__file__) + '/bullet_data')
         self._plane_id = self._pybullet_client.loadURDF("plane.urdf", [0, 0, 0],
                                                         self._pybullet_client.getQuaternionFromEuler(
