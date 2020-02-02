@@ -47,10 +47,18 @@ class PyBulletDeepMimicEnv(gym.Env):
         return np.array(self._humanoid.getState())
 
     def step(self, action):
+        desired_pose = np.array(self._humanoid.convertActionToPose(action))
+        desired_pose[:7] = 0
+        # we need the target root positon and orientation to be zero, to be compatible with deep mimic
+        maxForces = [
+            0, 0, 0, 0, 0, 0, 0, 200, 200, 200, 200, 50, 50, 50, 50, 200, 200, 200, 200, 150, 90,
+            90, 90, 90, 100, 100, 100, 100, 60, 200, 200, 200, 200, 150, 90, 90, 90, 90, 100, 100,
+            100, 100, 60
+        ]
         for i in range(self.action_repeat):
             self.time_in_episode += self.timestep_length
             self._humanoid.step_kin_model(self.time_in_episode)
-            self._humanoid.computeAndApplyPDForces(action, [10] * self.action_dim)
+            self._humanoid.computeAndApplyPDForces(desired_pose, maxForces)
             self._pybullet_client.stepSimulation()
 
         observation = np.array(self._humanoid.getState())
