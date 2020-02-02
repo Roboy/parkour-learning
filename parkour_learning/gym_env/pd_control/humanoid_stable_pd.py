@@ -149,7 +149,6 @@ class HumanoidStablePD(object):
         for dof in self._jointDofCounts:
             self._totalDofs += dof
         self.setSimTime(0)
-
         self.resetPose()
 
     def resetPose(self, start_time=0):
@@ -158,6 +157,9 @@ class HumanoidStablePD(object):
         pose = self.computePose(self._frameFraction)
         self.initializePose(self._poseInterpolator, self._kin_model, initBase=True)  # False)
         self.initializePose(self._poseInterpolator, self._sim_model, initBase=True)
+
+    def get_position(self):
+        return self._pybullet_client.getBasePositionAndOrientation(self._sim_model)[0]
 
     def initializePose(self, pose, phys_model, initBase, initializeVelocity=True):
         useArray = True
