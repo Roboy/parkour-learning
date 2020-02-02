@@ -34,16 +34,17 @@ class PyBulletDeepMimicEnv(gym.Env):
                                                         useMaximalCoordinates=True)
         self._pybullet_client.setGravity(0, -9.8, 0)
         self._pybullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.9)
-        mocap_data = MotionCaptureData(mocap_file_path)
+        self.mocap_data = MotionCaptureData(mocap_file_path)
         self.timestep_length = 1 / 500
-        self._humanoid = HumanoidStablePD(self._pybullet_client, mocap_data, self.timestep_length, False)
+        self._humanoid = HumanoidStablePD(self._pybullet_client, self.mocap_data, self.timestep_length, False)
         self._pybullet_client.setTimeStep(self.timestep_length)
         self.time_in_episode = 0
         self.action_repeat = 10
 
     def reset(self):
-        self.time_in_episode = 0
-        self._humanoid.resetPose()
+        # RSI : sample random start time
+        self.time_in_episode = random.uniform(0, self.mocap_data.num_frames() * self.mocap_data.key_frame_duration())
+        self._humanoid.resetPose(self.time_in_episode)
         return np.array(self._humanoid.getState())
 
     def step(self, action):

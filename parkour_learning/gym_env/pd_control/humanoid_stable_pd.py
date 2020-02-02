@@ -152,8 +152,8 @@ class HumanoidStablePD(object):
 
         self.resetPose()
 
-    def resetPose(self):
-        self.setSimTime(0)
+    def resetPose(self, start_time=0):
+        self.setSimTime(start_time)
         # self._frameFraction = 0
         pose = self.computePose(self._frameFraction)
         self.initializePose(self._poseInterpolator, self._kin_model, initBase=True)  # False)
