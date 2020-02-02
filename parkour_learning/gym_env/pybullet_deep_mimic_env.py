@@ -15,14 +15,13 @@ from parkour_learning.gym_env.pd_control.humanoid_stable_pd import HumanoidStabl
 class PyBulletDeepMimicEnv(gym.Env):
 
     def __init__(self, mocap_file_path='humanoid3d_walk.txt', render=False):
-        self.render = render
         self.action_dim = 43
         self.obs_dim = 197
         high = np.ones([self.action_dim])
         self.action_space = gym.spaces.Box(-high, high)
         high = np.inf * np.ones([self.obs_dim])
         self.observation_space = gym.spaces.Box(-high, high)
-        if self.render:
+        if render:
             self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.GUI)
             self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
         else:
@@ -68,6 +67,12 @@ class PyBulletDeepMimicEnv(gym.Env):
         return observation, reward, done, {}
 
     def render(self, mode='human'):
+        current_camera_info = self._pybullet_client.getDebugVisualizerCamera()
+        self._pybullet_client.resetDebugVisualizerCamera(
+            cameraDistance=current_camera_info[10],
+            cameraYaw=current_camera_info[8],
+            cameraPitch=current_camera_info[9],
+            cameraTargetPosition=self._humanoid.get_position())
         if mode != "rgb_array":
             return np.array([])
 
