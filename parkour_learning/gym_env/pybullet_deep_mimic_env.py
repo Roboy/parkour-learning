@@ -31,6 +31,7 @@ class PyBulletDeepMimicEnv(gym.Env):
                                                         self._pybullet_client.getQuaternionFromEuler(
                                                             [-math.pi * 0.5, 0, 0]),
                                                         useMaximalCoordinates=True)
+        # self._pybullet_client.loadURDF('track.urdf', useFixedBase=1, basePosition=(7, 0, 0), baseOrientation=(0, 0, 0, -1))
         self._pybullet_client.setGravity(0, -9.8, 0)
         self._pybullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.9)
         self.mocap_data = MotionCaptureData(mocap_file_path)
