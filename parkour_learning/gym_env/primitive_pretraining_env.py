@@ -50,9 +50,9 @@ class PrimitivePretrainingEnv(gym.Env):
         self._humanoid.change_mocap_file(new_mocap_file, 0)
 
         # sample random start time for mocap motion
-        mocap_time_fraction = random.uniform(0, 1000)/1000
+        mocap_time_fraction = random.uniform(0, 1000) / 1000
         self._humanoid.reset(mocap_time_fraction)
-        return np.array(self._humanoid.getState())
+        return self.get_observation()
 
     def get_all_mocap_data(self):
         mocap_data_objects = []
@@ -76,15 +76,19 @@ class PrimitivePretrainingEnv(gym.Env):
             self._humanoid.computeAndApplyPDForces(desired_pose, maxForces)
             self._pybullet_client.stepSimulation()
 
+        reward = self._humanoid.getReward()
+        done = reward < 0.4
+        observation = self.get_observation()
+        return observation, reward, done, {}
+
+    def get_observation(self):
         state_observation = np.array(self._humanoid.getState())
         goal_observation = self._humanoid.get_mocap_observation()
         observation = dict(
             state=state_observation,
             goal_observation=goal_observation
         )
-        reward = self._humanoid.getReward()
-        done = reward < 0.4
-        return observation, reward, done, {}
+        return observation
 
     def render(self, mode='human'):
         current_camera_info = self._pybullet_client.getDebugVisualizerCamera()
