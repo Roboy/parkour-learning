@@ -1,7 +1,9 @@
 # from pybullet_utils import pd_controller_stable
 from parkour_learning.gym_env.pd_control import pd_controller_stable
+import copy
 # from pybullet_envs.deep_mimic.env import humanoid_pose_interpolator
-from parkour_learning.gym_env.pd_control import humanoid_pose_interpolator
+from parkour_learning.gym_env.pd_control.humanoid_pose_interpolator import HumanoidPoseInterpolator
+from parkour_learning.gym_env.motion_capture_data import MotionCaptureData
 import numpy as np
 import math
 
@@ -20,23 +22,17 @@ leftElbow = 13
 jointFrictionForce = 0
 
 
-class HumanoidStablePD(object):
+class HumanoidMimic(object):
 
-    def __init__(self, pybullet_client, mocap_data, time_step_length,
-                 useFixedBase=True):
+    def __init__(self, pybullet_client, mocap_data: MotionCaptureData, time_step_length, useFixedBase=True):
         self._pybullet_client = pybullet_client
-        self._mocap_data = mocap_data
-        print("LOADING humanoid!")
+        self.mocap_data = mocap_data
         flags = self._pybullet_client.URDF_MAINTAIN_LINK_ORDER + self._pybullet_client.URDF_USE_SELF_COLLISION + self._pybullet_client.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self._sim_model = self._pybullet_client.loadURDF(
             "humanoid.urdf", [0, 0.889540259, 0],
             globalScaling=0.25,
             useFixedBase=useFixedBase,
             flags=flags)
-
-        # self._pybullet_client.setCollisionFilterGroupMask(self._sim_model,-1,collisionFilterGroup=0,collisionFilterMask=0)
-        # for j in range (self._pybullet_client.getNumJoints(self._sim_model)):
-        #  self._pybullet_client.setCollisionFilterGroupMask(self._sim_model,j,collisionFilterGroup=0,collisionFilterMask=0)
 
         self._end_effectors = [5, 8, 11, 14]  # ankle and wrist, both left and right
 
@@ -58,12 +54,6 @@ class HumanoidStablePD(object):
                                                           -1,
                                                           collisionFilterGroup=0,
                                                           collisionFilterMask=0)
-        # self._pybullet_client.changeDynamics(
-        #     self._kin_model,
-        #     -1,
-        #     activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
-        #                     self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
-        #                     self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
         alpha = 0.7
         self._pybullet_client.changeVisualShape(self._kin_model, -1, rgbaColor=[1, 1, 1, alpha])
         for j in range(self._pybullet_client.getNumJoints(self._kin_model)):
@@ -71,19 +61,12 @@ class HumanoidStablePD(object):
                                                               j,
                                                               collisionFilterGroup=0,
                                                               collisionFilterMask=0)
-            # self._pybullet_client.changeDynamics(
-            #     self._kin_model,
-            #     j,
-            #     activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
-            #                     self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
-            #                     self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
             self._pybullet_client.changeVisualShape(self._kin_model, j, rgbaColor=[1, 1, 1, alpha])
 
-        self._poseInterpolator = humanoid_pose_interpolator.HumanoidPoseInterpolator()
-
-        for i in range(self._mocap_data.num_frames() - 1):
-            frameData = self._mocap_data._motion_data['Frames'][i]
-            self._poseInterpolator.PostProcessMotionData(frameData)
+        self.pose_interpolator = HumanoidPoseInterpolator()
+        for i in range(mocap_data.num_frames() - 1):
+            frame_data = mocap_data._motion_data['Frames'][i]
+            self.pose_interpolator.PostProcessMotionData(frame_data)
 
         self._stablePD = pd_controller_stable.PDControllerStableMultiDof(self._pybullet_client)
         self._time_step_length = time_step_length
@@ -137,7 +120,7 @@ class HumanoidStablePD(object):
                 force=[jointFrictionForce, jointFrictionForce, 0])
 
         self._jointDofCounts = [4, 4, 4, 1, 4, 4, 1, 4, 1, 4, 4, 1]
-        self.num_joints = np.prod(np.array(self._jointDofCounts))
+        self.num_joints = np.sum(np.array(self._jointDofCounts))
 
         # only those body parts/links are allowed to touch the ground, otherwise the episode terminates
         # fall_contact_bodies = []
@@ -150,15 +133,58 @@ class HumanoidStablePD(object):
         self._totalDofs = 7
         for dof in self._jointDofCounts:
             self._totalDofs += dof
-        self.setSimTime(0)
-        self.resetPose()
+        self.sim_time = 0
+        self.time_step_length = time_step_length
+        self.pose_interpolator = HumanoidPoseInterpolator()
+        self.change_mocap_file(mocap_data, 0)
+        self.reset(0)
+        self.cycle_count = 0
 
-    def resetPose(self, start_time=0):
-        self.setSimTime(start_time)
-        # self._frameFraction = 0
-        pose = self.computePose(self._frameFraction)
-        self.initializePose(self._poseInterpolator, self._kin_model, initBase=True)  # False)
-        self.initializePose(self._poseInterpolator, self._sim_model, initBase=True)
+    def change_mocap_file(self, new_mocap_file, mocap_start_time):
+        self.mocap_data = new_mocap_file
+        self.sim_time = mocap_start_time
+
+        self.pose_interpolator = HumanoidPoseInterpolator()
+        for i in range(self.mocap_data.num_frames() - 1):
+            frameData = self.mocap_data.get_frame_data(i)
+            self.pose_interpolator.PostProcessMotionData(frameData)
+
+    def step(self):
+        self.sim_time += self.time_step_length
+        self._reset_model(self._kin_model, self.sim_time)
+        return self.getState(), self.getReward()
+
+    def reset(self, mocap_time_fraction):
+        """
+        mocap_time_fraction: float between 0 and 1. this will be mapped to time of mocap data
+        """
+        self.cycle_count = 0
+        self.sim_time = mocap_time_fraction * self.mocap_data.getCycleTime()
+        self._reset_model(self._kin_model, self.sim_time)
+        self._reset_model(self._sim_model, self.sim_time)
+
+    def _reset_model(self, model_uid, sim_time):
+        """
+        mocap_time : float between 0 and 1. this will be mapped to time of mocap data
+        """
+        mocap_cycle_fraction = (sim_time % self.mocap_data.getCycleTime()) / self.mocap_data.getCycleTime()
+        frame_index_before = int(mocap_cycle_fraction *  self.mocap_data.num_frames())
+        frame_index_after = frame_index_before + 1
+        frame_fraction = mocap_cycle_fraction * self.mocap_data.num_frames() - frame_index_before
+        if frame_index_after >= self.mocap_data.num_frames():
+            if self.mocap_data.is_cyclic_motion():
+                frame_index_after = 0
+                self.cycle_count += 1
+            else:
+                frame_index_before = 0
+                frame_index_after = 1
+        frame_data_before = copy.copy(self.mocap_data.get_frame_data(frame_index_before))
+        frame_data_after = copy.copy(self.mocap_data.get_frame_data(frame_index_after))
+        base_pos_offset = int(sim_time/self.mocap_data.getCycleTime()) * self.mocap_data.cycle_offset#  + int(cycle_overflow)  * self.mocap_data.cycle_offset
+        if frame_index_before == self.mocap_data.num_frames() - 1:
+            frame_data_after[1:4] += self.mocap_data.cycle_offset
+        self.pose_interpolator.Slerp(frame_fraction, frame_data_before, frame_data_after, self._pybullet_client, base_pos_offset)
+        self.initializePose(self.pose_interpolator, model_uid, initBase=True)
 
     def get_position(self):
         return self._pybullet_client.getBasePositionAndOrientation(self._sim_model)[0]
@@ -243,81 +269,9 @@ class HumanoidStablePD(object):
                                                               pose._leftShoulderRot, [0, 0, 0])
                 self._pybullet_client.resetJointStateMultiDof(phys_model, leftElbow, pose._leftElbowRot, [0])
 
-    def calcCycleCount(self, simTime, cycleTime):
-        phases = simTime / cycleTime
-        count = math.floor(phases)
-        loop = True
-        # count = (loop) ? count : cMathUtil::Clamp(count, 0, 1);
-        return count
-
-    def getCycleTime(self):
-        keyFrameDuration = self._mocap_data.key_frame_duration()
-        cycleTime = keyFrameDuration * (self._mocap_data.num_frames() - 1)
-        return cycleTime
-
-    def setSimTime(self, t):
-        self._simTime = t
-        # print("SetTimeTime time =",t)
-        keyFrameDuration = self._mocap_data.key_frame_duration()
-        cycleTime = self.getCycleTime()
-        # print("self._motion_data.NumFrames()=",self._mocap_data.NumFrames())
-        self._cycleCount = self.calcCycleCount(t, cycleTime)
-        # print("cycles=",cycles)
-        frameTime = t - self._cycleCount * cycleTime
-        if (frameTime < 0):
-            frameTime += cycleTime
-
-        # print("keyFrameDuration=",keyFrameDuration)
-        # print("frameTime=",frameTime)
-        self._frame = int(frameTime / keyFrameDuration)
-        # print("self._frame=",self._frame)
-
-        self._frameNext = self._frame + 1
-        if (self._frameNext >= self._mocap_data.num_frames()):
-            self._frameNext = self._frame
-
-        self._frameFraction = (frameTime - self._frame * keyFrameDuration) / (keyFrameDuration)
-
-    def computeCycleOffset(self):
-        firstFrame = 0
-        lastFrame = self._mocap_data.num_frames() - 1
-        frameData = self._mocap_data._motion_data['Frames'][0]
-        frameDataNext = self._mocap_data._motion_data['Frames'][lastFrame]
-
-        basePosStart = [frameData[1], frameData[2], frameData[3]]
-        basePosEnd = [frameDataNext[1], frameDataNext[2], frameDataNext[3]]
-        self._cycleOffset = [
-            basePosEnd[0] - basePosStart[0], basePosEnd[1] - basePosStart[1],
-            basePosEnd[2] - basePosStart[2]
-        ]
-        return self._cycleOffset
-
-    def computePose(self, frameFraction):
-        frameData = self._mocap_data._motion_data['Frames'][self._frame]
-        frameDataNext = self._mocap_data._motion_data['Frames'][self._frameNext]
-
-        self._poseInterpolator.Slerp(frameFraction, frameData, frameDataNext, self._pybullet_client)
-        # print("self._poseInterpolator.Slerp(", frameFraction,")=", pose)
-        self.computeCycleOffset()
-        oldPos = self._poseInterpolator._basePos
-        self._poseInterpolator._basePos = [
-            oldPos[0] + self._cycleCount * self._cycleOffset[0],
-            oldPos[1] + self._cycleCount * self._cycleOffset[1],
-            oldPos[2] + self._cycleCount * self._cycleOffset[2]
-        ]
-        pose = self._poseInterpolator.GetPose()
-        return pose
-
     def convertActionToPose(self, action):
-        pose = self._poseInterpolator.ConvertFromAction(self._pybullet_client, action)
+        pose = self.pose_interpolator.ConvertFromAction(self._pybullet_client, action)
         return pose
-
-    def step_kin_model(self, time_in_episode):
-        self.setSimTime(time_in_episode)
-        kinPose = self.computePose(self._frameFraction) # has to be computed here
-        self.initializePose(self._poseInterpolator,
-                            self._kin_model,
-                            initBase=True)
 
     def computeAndApplyPDForces(self, desiredPositions, maxForces, model=None):
         if model is None:
@@ -581,15 +535,6 @@ class HumanoidStablePD(object):
             force=maxForce)
         # print("startIndex=",startIndex)
 
-    def getPhase(self):
-        keyFrameDuration = self._mocap_data.key_frame_duration()
-        cycleTime = keyFrameDuration * (self._mocap_data.num_frames() - 1)
-        phase = self._simTime / cycleTime
-        phase = math.fmod(phase, 1.0)
-        if (phase < 0):
-            phase += 1
-        return phase
-
     def buildHeadingTrans(self, rootOrn):
         # align root transform 'forward' with world-space x axis
         eul = self._pybullet_client.getEulerFromQuaternion(rootOrn)
@@ -625,31 +570,18 @@ class HumanoidStablePD(object):
         return invOrigTransPos, invOrigTransOrn
 
     def getState(self):
-
         stateVector = []
-        phase = self.getPhase()
-        # print("phase=",phase)
-        stateVector.append(phase)
 
         rootTransPos, rootTransOrn = self.buildOriginTrans()
         basePos, baseOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
 
         rootPosRel, dummy = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                      basePos, [0, 0, 0, 1])
-        # print("!!!rootPosRel =",rootPosRel )
-        # print("rootTransPos=",rootTransPos)
-        # print("basePos=",basePos)
         localPos, localOrn = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                       basePos, baseOrn)
 
-        localPos = [
-            localPos[0] - rootPosRel[0], localPos[1] - rootPosRel[1], localPos[2] - rootPosRel[2]
-        ]
-        # print("localPos=",localPos)
-
         stateVector.append(rootPosRel[1])
 
-        # self.pb2dmJoints=[0,1,2,9,10,11,3,4,5,12,13,14,6,7,8]
         self.pb2dmJoints = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 
         linkIndicesSim = []
@@ -706,11 +638,18 @@ class HumanoidStablePD(object):
                 stateVector.append(l)
             for l in linkAngVelLocal:
                 stateVector.append(l)
-
-        # print("stateVector len=",len(stateVector))
-        # for st in range (len(stateVector)):
-        #  print("state[",st,"]=",stateVector[st])
         return stateVector
+
+    def get_mocap_observation(self):
+        """
+        return observation vector base on mocap data
+        """
+        mocap_cycle_fraction = (self.sim_time % self.mocap_data.getCycleTime()) / self.mocap_data.getCycleTime()
+        next_frame_index = int(mocap_cycle_fraction *  self.mocap_data.num_frames()) + 1
+
+        return np.array(self.mocap_data.get_frame_data(next_frame_index % self.mocap_data.num_frames()) +
+                        self.mocap_data.get_frame_data((next_frame_index + 1) % self.mocap_data.num_frames()))
+
 
     def terminates(self):
         # check if any non-allowed body part hits the ground
@@ -825,8 +764,8 @@ class HumanoidStablePD(object):
         linVelSim, angVelSim = self._pybullet_client.getBaseVelocity(self._sim_model)
         # don't read the velocities from the kinematic model (they are zero), use the pose interpolator velocity
         # see also issue https://github.com/bulletphysics/bullet3/issues/2401
-        linVelKin = self._poseInterpolator._baseLinVel
-        angVelKin = self._poseInterpolator._baseAngVel
+        linVelKin = self.pose_interpolator._baseLinVel
+        angVelKin = self.pose_interpolator._baseAngVel
 
         root_rot_err = self.calcRootRotDiff(rootOrnSim, rootOrnKin)
         pose_err += root_rot_w * root_rot_err

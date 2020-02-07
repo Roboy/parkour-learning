@@ -1,10 +1,10 @@
 import parkour_learning
-import gym
 import time
-import sys
+import gym
 
-mocap_file_path = 'gym_env/motions_archive/humanoid3d_jump.txt'
-env = gym.make('HumanoidDeepMimicBulletEnv-v1', render=True)
+env = gym.make('HumanoidPrimitivePretraining-v0', render=True)
+
+
 while True:
     obs = env.reset()
     env.reset()
@@ -19,5 +19,4 @@ while True:
         time.sleep(0.03)
         obs, reward, done, info = env.step(action)
         print('reward: ' +str(reward))
-        # env.render()
     print('num steps:' + str(step))

@@ -1,4 +1,5 @@
 from pybullet_utils import bullet_client
+from typing import List
 import math
 
 
@@ -140,14 +141,14 @@ class HumanoidPoseInterpolator(object):
     ]
     return pose
 
-  def Slerp(self, frameFraction, frameData, frameDataNext, bullet_client):
+  def Slerp(self, frameFraction, frameData, frameDataNext, bullet_client, base_pos_offset: List[float]):
     keyFrameDuration = frameData[0]
     basePos1Start = [frameData[1], frameData[2], frameData[3]]
     basePos1End = [frameDataNext[1], frameDataNext[2], frameDataNext[3]]
     self._basePos = [
-        basePos1Start[0] + frameFraction * (basePos1End[0] - basePos1Start[0]),
-        basePos1Start[1] + frameFraction * (basePos1End[1] - basePos1Start[1]),
-        basePos1Start[2] + frameFraction * (basePos1End[2] - basePos1Start[2])
+        basePos1Start[0] + frameFraction * (basePos1End[0] - basePos1Start[0]) + base_pos_offset[0],
+        basePos1Start[1] + frameFraction * (basePos1End[1] - basePos1Start[1]) + base_pos_offset[1],
+        basePos1Start[2] + frameFraction * (basePos1End[2] - basePos1Start[2]) + base_pos_offset[2]
     ]
     self._baseLinVel = self.ComputeLinVel(basePos1Start, basePos1End, keyFrameDuration)
     baseOrn1Start = [frameData[5], frameData[6], frameData[7], frameData[4]]
