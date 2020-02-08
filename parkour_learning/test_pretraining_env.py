@@ -18,5 +18,6 @@ while True:
         action *=0
         time.sleep(0.03)
         obs, reward, done, info = env.step(action)
+        print(len(obs['goal']))
         print('reward: ' +str(reward))
     print('num steps:' + str(step))
