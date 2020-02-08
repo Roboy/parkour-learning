@@ -39,9 +39,10 @@ class PrimitivePretrainingEnv(gym.Env):
         self.action_dim = 43
         self.obs_dim = 196
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(43,))
+        observation_example = self.get_observation()
         self.observation_space = gym.spaces.Dict({
-            'state': gym.spaces.Box(low=-1, high=1, shape=(196,)),
-            'goal': gym.spaces.Box(low=-1, high=1, shape=(self._humanoid.num_joints * 2,))
+            'state': gym.spaces.Box(low=-1, high=1, shape=observation_example['state'].shape),
+            'goal': gym.spaces.Box(low=-1, high=1, shape=observation_example['goal'].shape)
         })
 
     def reset(self):
@@ -86,7 +87,7 @@ class PrimitivePretrainingEnv(gym.Env):
         goal_observation = self._humanoid.get_mocap_observation()
         observation = dict(
             state=state_observation,
-            goal_observation=goal_observation
+            goal=goal_observation
         )
         return observation
 
