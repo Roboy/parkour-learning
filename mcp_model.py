@@ -5,6 +5,7 @@ from rlpyt.models.mlp import MlpModel
 from rlpyt.models.conv2d import Conv2dModel
 from torch.nn.functional import relu
 from torch.nn import Linear
+from torch.nn import ModuleList
 
 
 class PiMCPModel(torch.nn.Module):
@@ -23,8 +24,8 @@ class PiMCPModel(torch.nn.Module):
         self.action_size = action_size
         self.primitives_l1 = Linear(observation_shape.state[0], 512)
         self.primitives_l2 = Linear(512, 256)
-        self.primitives_l3s = []
-        self.primitives_l4s = []
+        self.primitives_l3s = ModuleList()
+        self.primitives_l4s = ModuleList()
         for i in range(num_primitives):
             self.primitives_l3s.append(Linear(256, 256))
             # action size x2 because of mean standard deviation for each action
