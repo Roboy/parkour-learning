@@ -16,6 +16,7 @@ import gym
 import torch
 import GPUtil
 import multiprocessing
+from mcp_model import PiMCPModel, QofMCPModel
 from rlpyt.models.pg.mujoco_lstm_model import MujocoLstmModel
 from rlpyt.utils.launching.affinity import affinity_from_code
 from rlpyt.utils.launching.variant import load_variant, update_config
@@ -40,11 +41,11 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         sac_kwargs=dict(learning_rate=3e-4, batch_size=2048, replay_size=1e6, discount=0.99),
         ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, value_loss_coeff=0.01, linear_lr_schedule=False),
         sampler_kwargs=dict(batch_T=5, batch_B=10, TrajInfoCls=RobotTrajInfo,
-                            env_kwargs=dict(id="HumanoidDeepMimicBulletEnv-v1"),
+                            env_kwargs=dict(id="HumanoidPrimitivePretraining-v0"),
                             eval_n_envs=10,
                             eval_max_steps=1e6,
                             eval_max_trajectories=10),
-        agent_args=dict(model_kwargs=dict(hidden_sizes=[1024, 512]), q_model_kwargs=dict(hidden_sizes=[1024, 512])),  # dict(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel),
+        agent_args=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot_file=snapshot_file,
         algo='sac'
