@@ -104,7 +104,7 @@ class QofMCPModel(torch.nn.Module):
 
         # Infer (presence of) leading dimensions: [T,B], [B], or [].
         lead_dim, T, B, _ = infer_leading_dims(observation.state, 1)
-        goal = observation.goa.view(T * B, -1)
+        goal = observation.goal.view(T * B, -1)
         state = observation.state.view(T * B, -1)
         action = action.view(T * B, -1)
         q_input = torch.cat([state, goal, action], dim=1)
