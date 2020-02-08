@@ -646,9 +646,12 @@ class HumanoidMimic(object):
         """
         mocap_cycle_fraction = (self.sim_time % self.mocap_data.getCycleTime()) / self.mocap_data.getCycleTime()
         next_frame_index = int(mocap_cycle_fraction *  self.mocap_data.num_frames()) + 1
+        next_frame = self.mocap_data.get_frame_data(next_frame_index % self.mocap_data.num_frames())
+        next_next_frame = self.mocap_data.get_frame_data((next_frame_index + 1) % self.mocap_data.num_frames())
+        next_joint_positions = next_frame[4:]
+        next_next_joint_positions = next_next_frame[4:]
 
-        return np.array(self.mocap_data.get_frame_data(next_frame_index % self.mocap_data.num_frames()) +
-                        self.mocap_data.get_frame_data((next_frame_index + 1) % self.mocap_data.num_frames()))
+        return np.array(next_joint_positions + next_next_joint_positions)
 
 
     def terminates(self):
