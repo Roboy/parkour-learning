@@ -1,7 +1,7 @@
 import torch
 from rlpyt.utils.tensor import infer_leading_dims, restore_leading_dims
 from rlpyt.models.mlp import MlpModel
-from torch.nn.functional import relu
+from torch.nn.functional import relu, sigmoid
 from torch.nn import Linear
 from torch.nn import ModuleList
 
@@ -50,33 +50,34 @@ class PiMCPModel(torch.nn.Module):
         gating_goal = relu(self.gating_goal_l1(goal_input))
         gating_goal = relu(self.gating_goal_l2(gating_goal))
         gating = relu(self.gating_l3(torch.cat((gating_state, gating_goal), -1)))
-        gating = self.gating_l4(gating)
+        gating = sigmoid(self.gating_l4(gating))
 
         primitives = relu(self.primitives_l1(state_input))
         primitives = self.primitives_l2(primitives)
 
         primitives_means = []
-        primitves_log_stds = []
+        primitves_stds = []
         for i in range(self.num_primitives):
             x = self.primitives_l3s[i](primitives)
             x = self.primitives_l4s[i](x)
             primitives_means.append(x[:,:self.action_size])
-            primitves_log_stds.append(x[:,self.action_size:])
+            # interpret last outputs as log stds
+            primitves_stds.append(torch.exp(x[:,self.action_size:]))
 
-        log_std = goal_input.new_zeros((T*B, self.action_size,))
+        std = goal_input.new_zeros((T*B, self.action_size,))
         mu = goal_input.new_zeros((T*B, self.action_size))
-        gating = gating.clamp(0, 1)
         gating = gating.reshape((T*B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:,i].expand((T*B, self.action_size)), torch.exp(primitves_log_stds[i]))
-            log_std = torch.add(log_std, x)
+            x = torch.div(gating[:,i].expand((T*B, self.action_size)), primitves_stds[i])
+            std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
-        log_std = torch.div(1, torch.exp(log_std))
-        mu = torch.mul(mu, log_std)
+        std = torch.div(1, std)
+        mu = torch.mul(mu, std)
+        log_std = torch.log(std)
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
-        mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
-        return mu, log_std
+        mu, std = restore_leading_dims((mu, log_std), lead_dim, T, B)
+        return mu, std
 
 
 class QofMCPModel(torch.nn.Module):
