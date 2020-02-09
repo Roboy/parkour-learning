@@ -84,7 +84,6 @@ class PrimitivePretrainingEnv(gym.Env):
         done = reward < 0.15
         if self.time_in_episode > self.time_limit:
             done = True
-            print('timelimit #############################')
         observation = self.get_observation()
         return observation, reward, done, {}
 
