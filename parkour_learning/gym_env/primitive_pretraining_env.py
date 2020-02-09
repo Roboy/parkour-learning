@@ -1,5 +1,5 @@
 import numpy as np
-from random import sample
+from random import sample, randint
 import math
 import os
 import os.path as osp
@@ -48,8 +48,7 @@ class PrimitivePretrainingEnv(gym.Env):
 
     def reset(self):
         # sample random mocap file
-        new_mocap_file = sample(self.mocap_objects, 1)[0]
-        self._humanoid.change_mocap_file(new_mocap_file, 0)
+        self.set_random_mocap_file()
         self.time_in_episode = 0
 
         # sample random start time for mocap motion
@@ -66,6 +65,8 @@ class PrimitivePretrainingEnv(gym.Env):
         return mocap_data_objects
 
     def step(self, action):
+        if randint(0, 1000) < 5:
+            self.set_random_mocap_file()
         desired_pose = np.array(self._humanoid.convertActionToPose(action))
         desired_pose[:7] = 0
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
@@ -132,3 +133,8 @@ class PrimitivePretrainingEnv(gym.Env):
         rgb_array = np.array(px)
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
+
+    def set_random_mocap_file(self):
+        new_mocap_file = sample(self.mocap_objects, 1)[0]
+        self._humanoid.change_mocap_file(new_mocap_file, 0)
+
