@@ -1,7 +1,7 @@
 import torch
 from rlpyt.utils.tensor import infer_leading_dims, restore_leading_dims
 from rlpyt.models.mlp import MlpModel
-from torch.nn.functional import relu, sigmoid
+from torch import sigmoid, relu
 from torch.nn import Linear
 from torch.nn import ModuleList
 
