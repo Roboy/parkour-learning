@@ -37,8 +37,6 @@ class PiMCPModel(torch.nn.Module):
         self.gating_goal_l2 = Linear(512, 256)
         self.gating_l3 = Linear(512, 256)
         self.gating_l4 = Linear(256, num_primitives)
-        init_log_std = 0.
-        self.log_std = torch.nn.Parameter(init_log_std * torch.ones(action_size))
 
     def forward(self, observation, prev_action, prev_reward):
         """Feedforward layers process as [T*B,H]. Return same leading dims as
