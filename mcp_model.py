@@ -1,8 +1,6 @@
-import numpy as np
 import torch
 from rlpyt.utils.tensor import infer_leading_dims, restore_leading_dims
 from rlpyt.models.mlp import MlpModel
-from rlpyt.models.conv2d import Conv2dModel
 from torch.nn.functional import relu
 from torch.nn import Linear
 from torch.nn import ModuleList
@@ -67,12 +65,13 @@ class PiMCPModel(torch.nn.Module):
 
         log_std = goal_input.new_zeros((T*B, self.action_size,))
         mu = goal_input.new_zeros((T*B, self.action_size))
+        gating = gating.clamp(0, 1)
         gating = gating.reshape((T*B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:,i].expand((T*B, self.action_size)), primitves_log_stds[i])
+            x = torch.div(gating[:,i].expand((T*B, self.action_size)), torch.exp(primitves_log_stds[i]))
             log_std = torch.add(log_std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
-        log_std = torch.div(1, log_std)
+        log_std = torch.div(1, torch.exp(log_std))
         mu = torch.mul(mu, log_std)
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
