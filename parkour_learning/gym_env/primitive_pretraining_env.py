@@ -18,6 +18,7 @@ class PrimitivePretrainingEnv(gym.Env):
     def __init__(self, render=False):
         self.action_repeat = 10
         self.timestep_length = 1 / 500
+        self.time_limit = 10
         if render:
             self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.GUI)
             self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
@@ -49,6 +50,7 @@ class PrimitivePretrainingEnv(gym.Env):
         # sample random mocap file
         new_mocap_file = sample(self.mocap_objects, 1)[0]
         self._humanoid.change_mocap_file(new_mocap_file, 0)
+        self.time_in_episode = 0
 
         # sample random start time for mocap motion
         mocap_time_fraction = random.uniform(0, 1000) / 1000
@@ -75,10 +77,14 @@ class PrimitivePretrainingEnv(gym.Env):
         for i in range(self.action_repeat):
             self._humanoid.step()
             self._humanoid.computeAndApplyPDForces(desired_pose, maxForces)
+            self.time_in_episode += self.timestep_length
             self._pybullet_client.stepSimulation()
 
         reward = self._humanoid.getReward()
         done = reward < 0.15
+        if self.time_in_episode > self.time_limit:
+            done = True
+            print('timelimit #############################')
         observation = self.get_observation()
         return observation, reward, done, {}
 
