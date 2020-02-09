@@ -81,7 +81,7 @@ class PrimitivePretrainingEnv(gym.Env):
             self._pybullet_client.stepSimulation()
 
         reward = self._humanoid.getReward()
-        done = reward < 0.15
+        done = reward < 0.2
         if self.time_in_episode > self.time_limit:
             done = True
         observation = self.get_observation()
