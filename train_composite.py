@@ -32,6 +32,7 @@ if __name__ == "__main__":
         model_snapshot_dict = snapshot['agent_state_dict']['model']
         snapshot['agent_state_dict'] = dict()
         snapshot['agent_state_dict']['model'] = PiMCPModel.remove_gating_from_snapshot(model_snapshot_dict)
+        snapshot['optimizer_state_dict'] = None
 
 
 
