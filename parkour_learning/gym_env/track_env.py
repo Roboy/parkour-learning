@@ -12,6 +12,7 @@ from parkour_learning.gym_env.motion_capture_data import MotionCaptureData
 from parkour_learning.gym_env.pd_control.humanoid_stable_pd import HumanoidStablePD
 from parkour_learning.gym_env.humanoid_mimic import HumanoidMimic
 from parkour_learning.gym_env.humanoid import Humanoid
+from collections import deque
 
 
 class TrackEnv(gym.Env):
@@ -45,9 +46,11 @@ class TrackEnv(gym.Env):
             'state': gym.spaces.Box(low=-1, high=1, shape=observation_example['state'].shape),
             'goal': gym.spaces.Box(low=-1, high=1, shape=observation_example['goal'].shape)
         })
+        self.last_100_goal_distances = None
 
     def reset(self):
         self.humanoid.reset()
+        self.last_100_goal_distances = deque(maxlen=100)
         return self.get_observation()
 
     def step(self, action):
@@ -59,8 +62,10 @@ class TrackEnv(gym.Env):
             self._pybullet_client.stepSimulation()
 
         # reward = self._humanoid.getReward()
-        done = False
-        reward = 0
+        goal_distance = np.linalg.norm(np.array(self.humanoid.get_position()[:2]) - self.target_xy)
+        self.last_100_goal_distances.append(goal_distance)
+        done = self.compute_done()
+        reward = 10 - goal_distance
         observation = self.get_observation()
         return observation, reward, done, {}
 
@@ -72,6 +77,12 @@ class TrackEnv(gym.Env):
             goal=goal_observation
         )
         return observation
+
+    def compute_done(self) -> bool:
+        done = False
+        if len(self.last_100_goal_distances) == self.last_100_goal_distances.maxlen:
+            done = (self.last_100_goal_distances[0] - self.last_100_goal_distances[-1]) < 0.3
+        return done
 
     def render(self, mode='human'):
         current_camera_info = self._pybullet_client.getDebugVisualizerCamera()

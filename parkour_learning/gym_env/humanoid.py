@@ -83,15 +83,14 @@ class Humanoid:
 
         # [x,y,z] base position and [x,y,z,w] base orientation!
         self.pose_interpolator = HumanoidPoseInterpolator()
-        self.reset()
-        self.cycle_count = 0
+        self.episode_start_state = self._pybullet_client.saveState()
 
 
     def reset(self):
         """
         mocap_time_fraction: float between 0 and 1. this will be mapped to time of mocap data
         """
-        pass
+        self._pybullet_client.restoreState(self.episode_start_state)
 
     def get_position(self):
         return self._pybullet_client.getBasePositionAndOrientation(self.humanoid_uid)[0]
