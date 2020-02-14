@@ -23,6 +23,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     log_dir = args.log_dir or args.log_dir_positional or './data'
     print("training started with parameters: " + str(args))
+    snapshot = None
     if args.snapshot_file is not None:
         snapshot = torch.load(args.snapshot_file, map_location=torch.device('cpu'))
     elif args.primitives_snapshot is not None:
@@ -32,8 +33,6 @@ if __name__ == "__main__":
         snapshot['agent_state_dict'] = dict()
         snapshot['agent_state_dict']['model'] = PiMCPModel.remove_gating_from_snapshot(model_snapshot_dict)
         snapshot['optimizer_state_dict'] = None
-
-
 
     config_update = dict(agent_kwargs=dict(model_kwargs=dict(freeze_primitives=True)))
 
