@@ -20,6 +20,7 @@ class TrackEnv(gym.Env):
         self.action_repeat = 10
         self.timestep_length = 1 / 500
         self.time_limit = 10
+        self.target_xy = np.array([10, 0])
         if render:
             self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.GUI)
             self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
@@ -53,13 +54,8 @@ class TrackEnv(gym.Env):
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
         desired_pose[:7] = 0
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
-        maxForces = [
-            0, 0, 0, 0, 0, 0, 0, 200, 200, 200, 200, 50, 50, 50, 50, 200, 200, 200, 200, 150, 90,
-            90, 90, 90, 100, 100, 100, 100, 60, 200, 200, 200, 200, 150, 90, 90, 90, 90, 100, 100,
-            100, 100, 60
-        ]
         for i in range(self.action_repeat):
-            self.humanoid.computeAndApplyPDForces(desired_pose, maxForces)
+            self.humanoid.computeAndApplyPDForces(desired_pose)
             self._pybullet_client.stepSimulation()
 
         # reward = self._humanoid.getReward()
@@ -70,7 +66,7 @@ class TrackEnv(gym.Env):
 
     def get_observation(self):
         state_observation = np.array(self.humanoid.getState())
-        goal_observation = np.array([])
+        goal_observation = np.array(self.humanoid.get_position()[:2]) - self.target_xy
         observation = dict(
             state=state_observation,
             goal=goal_observation
