@@ -77,6 +77,8 @@ class PiMCPModel(torch.nn.Module):
         std = torch.div(1, std)
         mu = torch.mul(mu, std)
         log_std = torch.log(std)
+        assert not torch.isnan(mu), "mu is nan"
+        assert not torch.isnan(log_std), 'log std is nan'
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, std = restore_leading_dims((mu, log_std), lead_dim, T, B)
