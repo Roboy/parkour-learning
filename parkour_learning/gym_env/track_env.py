@@ -40,6 +40,7 @@ class TrackEnv(gym.Env):
         self._pybullet_client.setTimeStep(self.timestep_length)
         self.action_dim = 43
         self.obs_dim = 196
+        self.max_num_steps=2000
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(43,))
         observation_example = self.get_observation()
         self.observation_space = gym.spaces.Dict({
@@ -51,9 +52,11 @@ class TrackEnv(gym.Env):
     def reset(self):
         self.humanoid.reset()
         self.last_100_goal_distances = deque(maxlen=100)
+        self.step = 0
         return self.get_observation()
 
     def step(self, action):
+        self.step += 1
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
         desired_pose[:7] = 0
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
@@ -79,9 +82,11 @@ class TrackEnv(gym.Env):
         return observation
 
     def compute_done(self) -> bool:
-        done = False
+        done = self.last_100_goal_distances[-1] < 1
         if len(self.last_100_goal_distances) == self.last_100_goal_distances.maxlen:
             done = (self.last_100_goal_distances[0] - self.last_100_goal_distances[-1]) < 0.3
+        if self.step > self.max_num_steps:
+            done = True
         return done
 
     def render(self, mode='human'):
