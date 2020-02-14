@@ -3,6 +3,7 @@ from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.cpu.sampler import CpuSampler, CpuResetCollector
 from rlpyt.samplers.async_.cpu_sampler import AsyncCpuSampler
 from rlpyt.envs.gym import make as gym_make
+from typing import Dict
 from rlpyt.algos.qpg.sac import SAC
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
@@ -13,17 +14,15 @@ from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
 from rlpyt.algos.pg.ppo import PPO
 from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
 import gym
+from sac_agent_safe_load import SacAgentSafeLoad
 import torch
 import GPUtil
 import multiprocessing
 from mcp_model import PiMCPModel, QofMCPModel
-from rlpyt.models.pg.mujoco_lstm_model import MujocoLstmModel
 from rlpyt.utils.launching.affinity import affinity_from_code
 from rlpyt.utils.launching.variant import load_variant, update_config
-from vision_models import PiVisionModel, QofMuVisionModel
 from robot_traj_info import RobotTrajInfo
 import argparse
-from vision_models import VisionFfModel
 
 
 def make(*args, info_example=None, **kwargs):
@@ -36,18 +35,20 @@ def make(*args, info_example=None, **kwargs):
 
 
 def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
-                    snapshot_file: str = None, serial_mode=True):
+                    serial_mode=True,
+                    snapshot: Dict=None,
+                    config_update: Dict=None):
     config = dict(
         sac_kwargs=dict(learning_rate=3e-4, batch_size=2048, replay_size=1e6, discount=0.99),
         ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, value_loss_coeff=0.01, linear_lr_schedule=False),
         sampler_kwargs=dict(batch_T=5, batch_B=9, TrajInfoCls=RobotTrajInfo,
-                            env_kwargs=dict(id="HumanoidPrimitivePretraining-v0"),
+                            env_kwargs=dict(id="TrackEnv-v0"),
                             eval_n_envs=9,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
         agent_args=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
-        snapshot_file=snapshot_file,
+        snapshot=snapshot,
         algo='sac'
     )
 
@@ -65,13 +66,14 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         variant = load_variant(log_dir)
         config = update_config(config, variant)
     except FileNotFoundError:
-        pass  # run with default parameters
+        if config_update is not None:
+            update_config(config, config_update)
 
     agent_state_dict = optimizer_state_dict = None
-    if config['snapshot_file'] is not None:
-        snapshot = torch.load(config['snapshot_file'], map_location=torch.device('cpu'))
-        agent_state_dict = snapshot['agent_state_dict']
-        optimizer_state_dict = snapshot['optimizer_state_dict']
+    if config['snapshot'] is not None:
+        # snapshot = torch.load(config['snapshot_file'], map_location=torch.device('cpu'))
+        agent_state_dict = config['snapshot']['agent_state_dict']
+        optimizer_state_dict = config['snapshot']['optimizer_state_dict']
 
     if config['algo'] == 'ppo':
         AgentClass = MujocoFfAgent
@@ -80,7 +82,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         SamplerClass = CpuSampler
         algo_kwargs = config['ppo_kwargs']
     elif config['algo'] == 'sac':
-        AgentClass = SacAgent
+        AgentClass = SacAgentSafeLoad
         AlgoClass = SAC
         algo_kwargs = config['sac_kwargs']
         if not serial_mode:
@@ -100,6 +102,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         SamplerClass = SerialSampler
         RunnerClass = MinibatchRlEval
         config['runner_kwargs']['log_interval_steps'] = 1e3
+        config['sac_kwargs']['min_steps_learn'] = 1000
 
     sampler = SamplerClass(
         **config['sampler_kwargs'],

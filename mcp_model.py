@@ -13,7 +13,8 @@ class PiMCPModel(torch.nn.Module):
             observation_shape,
             hidden_sizes,
             action_size,
-            num_primitives=4
+            num_primitives=4,
+            freeze_primitives=False,
     ):
         super().__init__()
         assert hasattr(observation_shape, 'state'), "mcp model requires observation dict to contain state attribute"
@@ -35,6 +36,8 @@ class PiMCPModel(torch.nn.Module):
         self.gating_goal_l2 = Linear(512, 256)
         self.gating_l3 = Linear(512, 256)
         self.gating_l4 = Linear(256, num_primitives)
+        if freeze_primitives:
+            self.freeze_primitives()
 
     def forward(self, observation, prev_action, prev_reward):
         """Feedforward layers process as [T*B,H]. Return same leading dims as
@@ -60,15 +63,15 @@ class PiMCPModel(torch.nn.Module):
         for i in range(self.num_primitives):
             x = self.primitives_l3s[i](primitives)
             x = self.primitives_l4s[i](x)
-            primitives_means.append(x[:,:self.action_size])
+            primitives_means.append(x[:, :self.action_size])
             # interpret last outputs as log stds
-            primitves_stds.append(torch.exp(x[:,self.action_size:]))
+            primitves_stds.append(torch.exp(x[:, self.action_size:]))
 
-        std = goal_input.new_zeros((T*B, self.action_size,))
-        mu = goal_input.new_zeros((T*B, self.action_size))
-        gating = gating.reshape((T*B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
+        std = goal_input.new_zeros((T * B, self.action_size,))
+        mu = goal_input.new_zeros((T * B, self.action_size))
+        gating = gating.reshape((T * B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:,i].expand((T*B, self.action_size)), primitves_stds[i])
+            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitves_stds[i])
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
         std = torch.div(1, std)
@@ -78,6 +81,31 @@ class PiMCPModel(torch.nn.Module):
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, std = restore_leading_dims((mu, log_std), lead_dim, T, B)
         return mu, std
+
+    def freeze_primitives(self):
+        self.primitives_l1.requires_grad = False
+        self.primitives_l2.requires_grad = False
+        for layer3, layer4 in zip(self.primitives_l3s, self.primitives_l4s):
+            layer3.require_grad = False
+            layer4.require_grad = False
+
+    @staticmethod
+    def remove_gating_from_snapshot(snapshot_dict):
+        keys_to_remove = ['gating_state_l1.weight',
+                          'gating_state_l1.bias',
+                          'gating_state_l2.weight',
+                          'gating_state_l2.bias',
+                          'gating_goal_l1.weight',
+                          'gating_goal_l1.bias',
+                          'gating_goal_l2.weight',
+                          'gating_goal_l2.bias',
+                          'gating_l3.weight',
+                          'gating_l3.bias',
+                          'gating_l4.weight',
+                          'gating_l4.bias',
+                          ]
+        [snapshot_dict.pop(key) for key in keys_to_remove]
+        return snapshot_dict
 
 
 class QofMCPModel(torch.nn.Module):
