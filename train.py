@@ -140,5 +140,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
     log_dir = args.log_dir or args.log_dir_positional or './data'
     print("training started with parameters: " + str(args))
-    build_and_train(slot_affinity_code=args.slot_affinity_code, log_dir=log_dir, run_ID=args.run_id,
-                    snapshot_file=args.snapshot_file, serial_mode=args.serial_mode)
+    snapshot = None
+    if args.snapshot_file is not None:
+        snapshot = torch.load(args.snapshot_file, map_location=torch.device('cpu'))
+
+    config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HumanoidPrimitivePretraining-v0')))
+
+    build_and_train(slot_affinity_code=args.slot_affinity_code,
+                    log_dir=log_dir,
+                    run_ID=args.run_id,
+                    snapshot=snapshot,
+                    config_update=config_update,
+                    serial_mode=args.serial_mode)
