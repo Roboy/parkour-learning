@@ -71,14 +71,14 @@ class PiMCPModel(torch.nn.Module):
         mu = goal_input.new_zeros((T * B, self.action_size))
         gating = gating.reshape((T * B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitves_stds[i])
+            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitves_stds[i].clamp(min=1e-5))
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
         std = torch.div(1, std)
         mu = torch.mul(mu, std)
         log_std = torch.log(std)
-        assert not torch.isnan(mu), "mu is nan"
-        assert not torch.isnan(log_std), 'log std is nan'
+        assert not torch.isnan(mu).any(), "mu is nan"
+        assert not torch.isnan(log_std).any(), 'log std is nan'
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, std = restore_leading_dims((mu, log_std), lead_dim, T, B)

@@ -52,11 +52,11 @@ class TrackEnv(gym.Env):
     def reset(self):
         self.humanoid.reset()
         self.last_100_goal_distances = deque(maxlen=100)
-        self.step = 0
+        self.step_in_episode = 0
         return self.get_observation()
 
     def step(self, action):
-        self.step += 1
+        self.step_in_episode += 1
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
         desired_pose[:7] = 0
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
@@ -85,7 +85,7 @@ class TrackEnv(gym.Env):
         done = self.last_100_goal_distances[-1] < 1
         if len(self.last_100_goal_distances) == self.last_100_goal_distances.maxlen:
             done = (self.last_100_goal_distances[0] - self.last_100_goal_distances[-1]) < 0.3
-        if self.step > self.max_num_steps:
+        if self.step_in_episode > self.max_num_steps:
             done = True
         return done
 
