@@ -14,6 +14,7 @@ class PiMCPModel(torch.nn.Module):
             action_size,
             num_primitives=4,
             freeze_primitives=False,
+            hidden_sizes=None  # necessary for rlpyt compatibility
     ):
         super().__init__()
         assert hasattr(observation_shape, 'state'), "mcp model requires observation dict to contain state attribute"
