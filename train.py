@@ -46,7 +46,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                             eval_n_envs=9,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
-        agent_args=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel),
+        agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=False)),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
         algo='sac'
@@ -67,7 +67,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         config = update_config(config, variant)
     except FileNotFoundError:
         if config_update is not None:
-            update_config(config, config_update)
+            config = update_config(config, config_update)
 
     agent_state_dict = optimizer_state_dict = None
     if config['snapshot'] is not None:
@@ -110,7 +110,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         eval_env_kwargs=config['sampler_kwargs']['env_kwargs']
     )
     algo = AlgoClass(**algo_kwargs, initial_optim_state_dict=optimizer_state_dict)
-    agent = AgentClass(initial_model_state_dict=agent_state_dict, **config['agent_args'])
+    agent = AgentClass(initial_model_state_dict=agent_state_dict, **config['agent_kwargs'])
     runner = RunnerClass(
         **config['runner_kwargs'],
         algo=algo,

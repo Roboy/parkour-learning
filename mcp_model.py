@@ -11,7 +11,6 @@ class PiMCPModel(torch.nn.Module):
     def __init__(
             self,
             observation_shape,
-            hidden_sizes,
             action_size,
             num_primitives=4,
             freeze_primitives=False,

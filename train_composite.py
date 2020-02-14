@@ -35,10 +35,11 @@ if __name__ == "__main__":
 
 
 
-    config_update = dict(snapshot=snapshot)
+    config_update = dict(agent_kwargs=dict(model_kwargs=dict(freeze_primitives=True)))
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,
                     run_ID=args.run_id,
                     serial_mode=args.serial_mode,
-                    snapshot=snapshot)
+                    snapshot=snapshot,
+                    config_update=config_update)
