@@ -47,6 +47,8 @@ class PiMCPModel(torch.nn.Module):
         lead_dim, T, B, _ = infer_leading_dims(observation.state, 1)
         goal_input = observation.goal.view(T * B, -1)
         state_input = observation.state.view(T * B, -1)
+        assert not torch.isnan(goal_input).any(), "goal input is nan"
+        assert not torch.isnan(state_input).any(), "state input is nan"
         # inputs now with just one batch dimension at front
         gating_state = relu(self.gating_state_l1(state_input))
         gating_state = relu(self.gating_state_l2(gating_state))
