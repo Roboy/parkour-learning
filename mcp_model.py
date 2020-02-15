@@ -56,6 +56,7 @@ class PiMCPModel(torch.nn.Module):
         gating_goal = relu(self.gating_goal_l2(gating_goal))
         gating = relu(self.gating_l3(torch.cat((gating_state, gating_goal), -1)))
         gating = sigmoid(self.gating_l4(gating))
+        assert not torch.isnan(gating).any(), 'gating is nan'
 
         primitives = relu(self.primitives_l1(state_input))
         primitives = self.primitives_l2(primitives)
@@ -68,7 +69,7 @@ class PiMCPModel(torch.nn.Module):
             primitives_means.append(x[:, :self.action_size])
             # interpret last outputs as log stds
             primitves_stds.append(torch.exp(x[:, self.action_size:]))
-            assert not torch.isnan(primitives_means[i]).any(), 'primitive means is nan'
+            assert not torch.isnan(primitives_means[i]).any(), 'primitive means is nan print x : ' + str(x)
             assert not torch.isnan(primitves_stds[i]).any(), 'primitive stds is nan'
         std = goal_input.new_zeros((T * B, self.action_size,))
         mu = goal_input.new_zeros((T * B, self.action_size))
@@ -78,12 +79,13 @@ class PiMCPModel(torch.nn.Module):
             assert not torch.isnan(x).any(), 'x is nan'
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
+            assert not torch.isnan(mu).any() ,'mu is nan ' + str(mu) + str(x) + str(primitives_means)
         assert not torch.isnan(std).any(), 'std nan: '
         std = torch.div(1, std)
         mu = torch.mul(mu, std)
         assert not torch.isnan(std).any(), 'std div nan: '
         log_std = torch.log(std)
-        assert not torch.isnan(mu).any(), "mu is nan"
+        assert not torch.isnan(mu).any(), "mu is nan " + str(mu) + str(std)
         assert not torch.isnan(log_std).any(), 'log std is nan'
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
