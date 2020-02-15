@@ -42,7 +42,6 @@ class PiMCPModel(torch.nn.Module):
     def forward(self, observation, prev_action, prev_reward):
         """Feedforward layers process as [T*B,H]. Return same leading dims as
         input, can be [T,B], [B], or []."""
-
         # Infer (presence of) leading dimensions: [T,B], [B], or [].
         lead_dim, T, B, _ = infer_leading_dims(observation.state, 1)
         goal_input = observation.goal.view(T * B, -1)
@@ -81,7 +80,7 @@ class PiMCPModel(torch.nn.Module):
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
             assert not torch.isnan(mu).any() ,'mu is nan ' + str(mu) + str(x) + str(primitives_means)
         assert not torch.isnan(std).any(), 'std nan: '
-        std = torch.div(1, std)
+        std = torch.div(1, std.clamp(min=1e-5))
         mu = torch.mul(mu, std)
         assert not torch.isnan(std).any(), 'std div nan: '
         log_std = torch.log(std)
