@@ -68,16 +68,20 @@ class PiMCPModel(torch.nn.Module):
             primitives_means.append(x[:, :self.action_size])
             # interpret last outputs as log stds
             primitves_stds.append(torch.exp(x[:, self.action_size:]))
-
+            assert not torch.isnan(primitives_means[i]).any(), 'primitive means is nan'
+            assert not torch.isnan(primitves_stds[i]).any(), 'primitive stds is nan'
         std = goal_input.new_zeros((T * B, self.action_size,))
         mu = goal_input.new_zeros((T * B, self.action_size))
         gating = gating.reshape((T * B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
             x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitves_stds[i].clamp(min=1e-5))
+            assert not torch.isnan(x).any(), 'x is nan'
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
+        assert not torch.isnan(std).any(), 'std nan: '
         std = torch.div(1, std)
         mu = torch.mul(mu, std)
+        assert not torch.isnan(std).any(), 'std div nan: '
         log_std = torch.log(std)
         assert not torch.isnan(mu).any(), "mu is nan"
         assert not torch.isnan(log_std).any(), 'log std is nan'
