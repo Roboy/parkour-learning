@@ -136,13 +136,15 @@ class HumanoidMimic(object):
         self.sim_time = 0
         self.time_step_length = time_step_length
         self.pose_interpolator = HumanoidPoseInterpolator()
+        self.mocap_obects = []
+        self.cycle_count = 0
         self.change_mocap_file(mocap_data, 0)
         self.reset(0)
-        self.cycle_count = 0
 
     def change_mocap_file(self, new_mocap_file, mocap_start_time):
         self.mocap_data = new_mocap_file
         self.sim_time = mocap_start_time
+        self.set_mocap_objects()
 
         self.pose_interpolator = HumanoidPoseInterpolator()
         for i in range(self.mocap_data.num_frames() - 1):
@@ -151,8 +153,13 @@ class HumanoidMimic(object):
 
     def step(self):
         self.sim_time += self.time_step_length
-        self._reset_model(self._kin_model, self.sim_time)
-        return self.getState(), self.getReward()
+        done = self._reset_model(self._kin_model, self.sim_time)
+        return self.getState(), self.getReward(), done
+
+    def delete_mocap_objects(self):
+        for object_uid in self.mocap_obects:
+            self._pybullet_client.removeBody(object_uid)
+        self.mocap_obects = []
 
     def reset(self, mocap_time_fraction):
         """
@@ -163,27 +170,44 @@ class HumanoidMimic(object):
         self._reset_model(self._kin_model, self.sim_time)
         self._reset_model(self._sim_model, self.sim_time)
 
+    def set_mocap_objects(self):
+        self.delete_mocap_objects()
+
+        for data_file, position in self.mocap_data.get_objects_dict().items():
+            position = np.array(position) + self.cycle_count * self.mocap_data.cycle_offset
+            self.mocap_obects.append(self._pybullet_client.loadURDF(data_file, position, useFixedBase=True))
+
     def _reset_model(self, model_uid, sim_time):
         """
         mocap_time : float between 0 and 1. this will be mapped to time of mocap data
         """
+        done = False
         mocap_cycle_fraction = (sim_time % self.mocap_data.getCycleTime()) / self.mocap_data.getCycleTime()
-        frame_index_before = int(mocap_cycle_fraction *  self.mocap_data.num_frames())
+        if mocap_cycle_fraction >= 1:
+            self.cycle_count += 1
+            self.set_mocap_objects()
+
+        frame_index_before = int(mocap_cycle_fraction * self.mocap_data.num_frames())
         frame_index_after = frame_index_before + 1
         frame_fraction = mocap_cycle_fraction * self.mocap_data.num_frames() - frame_index_before
-        if frame_index_after >= self.mocap_data.num_frames():
-            if self.mocap_data.is_cyclic_motion():
-                frame_index_after = 0
-                self.cycle_count += 1
-            else:
-                frame_index_before = 0
-                frame_index_after = 1
+        print(frame_index_after)
+        print(self.cycle_count)
+        # if frame_index_after >= self.mocap_data.num_frames():
+        #     if self.mocap_data.is_cyclic_motion():
+        #         frame_index_after = 0
+        #         self.cycle_count += 1
+        #         self.set_mocap_objects()
+        #     else:
+        #         frame_index_before = 0
+        #         frame_index_after = 1
         frame_data_before = copy.copy(self.mocap_data.get_frame_data(frame_index_before))
         frame_data_after = copy.copy(self.mocap_data.get_frame_data(frame_index_after))
-        base_pos_offset = int(sim_time/self.mocap_data.getCycleTime()) * self.mocap_data.cycle_offset#  + int(cycle_overflow)  * self.mocap_data.cycle_offset
+        base_pos_offset = int(
+            sim_time / self.mocap_data.getCycleTime()) * self.mocap_data.cycle_offset  # + int(cycle_overflow)  * self.mocap_data.cycle_offset
         if frame_index_before == self.mocap_data.num_frames() - 1:
             frame_data_after[1:4] += self.mocap_data.cycle_offset
-        self.pose_interpolator.Slerp(frame_fraction, frame_data_before, frame_data_after, self._pybullet_client, base_pos_offset)
+        self.pose_interpolator.Slerp(frame_fraction, frame_data_before, frame_data_after, self._pybullet_client,
+                                     base_pos_offset)
         self.initializePose(self.pose_interpolator, model_uid, initBase=True)
 
     def get_position(self):
@@ -645,14 +669,13 @@ class HumanoidMimic(object):
         return observation vector base on mocap data
         """
         mocap_cycle_fraction = (self.sim_time % self.mocap_data.getCycleTime()) / self.mocap_data.getCycleTime()
-        next_frame_index = int(mocap_cycle_fraction *  self.mocap_data.num_frames()) + 1
+        next_frame_index = int(mocap_cycle_fraction * self.mocap_data.num_frames()) + 1
         next_frame = self.mocap_data.get_frame_data(next_frame_index % self.mocap_data.num_frames())
         next_next_frame = self.mocap_data.get_frame_data((next_frame_index + 1) % self.mocap_data.num_frames())
         next_joint_positions = next_frame[4:]
         next_next_joint_positions = next_next_frame[4:]
 
         return np.array(next_joint_positions + next_next_joint_positions)
-
 
     def terminates(self):
         # check if any non-allowed body part hits the ground

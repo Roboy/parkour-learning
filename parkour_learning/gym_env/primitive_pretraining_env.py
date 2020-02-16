@@ -19,6 +19,7 @@ class PrimitivePretrainingEnv(gym.Env):
         self.action_repeat = 10
         self.timestep_length = 1 / 500
         self.time_limit = 10
+        self.min_time_per_mocap = 0.8
         if render:
             self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.GUI)
             self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
@@ -50,6 +51,7 @@ class PrimitivePretrainingEnv(gym.Env):
         # sample random mocap file
         self.set_random_mocap_file()
         self.time_in_episode = 0
+        self.time_of_mocap = 0
 
         # sample random start time for mocap motion
         mocap_time_fraction = random.uniform(0, 1000) / 1000
@@ -65,8 +67,9 @@ class PrimitivePretrainingEnv(gym.Env):
         return mocap_data_objects
 
     def step(self, action):
-        if randint(0, 1000) < 5:
+        if randint(0, 1000) < 0:
             self.set_random_mocap_file()
+            self.time_of_mocap = 0
         desired_pose = np.array(self._humanoid.convertActionToPose(action))
         desired_pose[:7] = 0
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
@@ -79,10 +82,12 @@ class PrimitivePretrainingEnv(gym.Env):
             self._humanoid.step()
             self._humanoid.computeAndApplyPDForces(desired_pose, maxForces)
             self.time_in_episode += self.timestep_length
+            self.time_of_mocap += self.timestep_length
             self._pybullet_client.stepSimulation()
 
         reward = self._humanoid.getReward()
-        done = reward < 0.2
+        print(self.time_of_mocap)
+        done = reward < 0.0 if self.time_of_mocap > self.min_time_per_mocap else False
         if self.time_in_episode > self.time_limit:
             done = True
         observation = self.get_observation()
