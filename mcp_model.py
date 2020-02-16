@@ -83,13 +83,13 @@ class PiMCPModel(torch.nn.Module):
         std = torch.div(1, std.clamp(min=1e-5))
         mu = torch.mul(mu, std)
         assert not torch.isnan(std).any(), 'std div nan: '
-        log_std = torch.log(std)
+        log_std = torch.log(std.clamp(min=1e-5))
         assert not torch.isnan(mu).any(), "mu is nan " + str(mu) + str(std)
         assert not torch.isnan(log_std).any(), 'log std is nan'
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
-        mu, std = restore_leading_dims((mu, log_std), lead_dim, T, B)
-        return mu, std
+        mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
+        return mu, log_std
 
     def freeze_primitives(self):
         self.primitives_l1.requires_grad = False
