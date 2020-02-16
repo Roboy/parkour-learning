@@ -11,6 +11,8 @@ class MotionCaptureData(object):
         with open(path) as f:
             self._motion_data = json.load(f)
         self.cycle_offset = self.computeCycleOffset()
+        self.cycle_time = self.key_frame_duration() * (self.num_frames() - 1)
+        self.num_frames = len(self._motion_data['Frames'])
 
     def get_frame_data(self, frame_index):
         return self._motion_data['Frames'][frame_index]
@@ -51,3 +53,10 @@ class MotionCaptureData(object):
         base_pos_end = last_frame_data[1:4]
         cycle_offset = np.array(base_pos_end) - np.array(base_pos_start)
         return cycle_offset
+
+    def get_objects_dict(self) -> dict:
+        if 'Objects' in self._motion_data.keys():
+            return self._motion_data['Objects']
+        else:
+            return dict()
+

@@ -28,6 +28,22 @@ class Humanoid:
         90, 90, 90, 100, 100, 100, 100, 60, 200, 200, 200, 200, 150, 90, 90, 90, 90, 100, 100,
         100, 100, 60
     ]
+    end_effectors = [5, 8, 11, 14]  # ankle and wrist, both left and right
+
+    joint_indeces = dict(
+        chest=1,
+        neck=2,
+        rightHip=3,
+        rightKnee=4,
+        rightAnkle=5,
+        rightShoulder=6,
+        rightElbow=7,
+        leftHip=9,
+        leftKnee=10,
+        leftAnkle=11,
+        leftShoulder=12,
+        leftElbow=13,
+    )
 
     def __init__(self, pybullet_client, time_step_length):
         self._pybullet_client = pybullet_client
@@ -85,6 +101,13 @@ class Humanoid:
         self.pose_interpolator = HumanoidPoseInterpolator()
         self.episode_start_state = self._pybullet_client.saveState()
 
+    def set_alpha(self, alpha):
+        """
+        change visual shape of humanoid
+        :alpha 1 is normal, 0 is invisible, 0.5 is half seethrough
+        """
+        for link in range(self.num_joints):
+            self._pybullet_client.changeVisualShape(self.humanoid_uid, link, rgbaColor=[1, 1, 1, alpha])
 
     def reset(self):
         """
@@ -333,3 +356,22 @@ class Humanoid:
             for l in linkAngVelLocal:
                 stateVector.append(l)
         return stateVector
+
+    def set_with_pose_interpolator(self, pose: HumanoidPoseInterpolator):
+        self._pybullet_client.resetBasePositionAndOrientation(self.humanoid_uid, pose._basePos,
+                                                           pose._baseOrn)
+        # print('reset to position: ' + str(pose._basePos))
+        self._pybullet_client.resetBaseVelocity(self.humanoid_uid, pose._baseLinVel, pose._baseAngVel)
+        # indices = [chest, neck, rightHip, rightKnee,
+        #            rightAnkle, rightShoulder, rightElbow, leftHip,
+        #            leftKnee, leftAnkle, leftShoulder, leftElbow]
+        indices = self.joint_indeces.values()
+        jointPositions = [pose._chestRot, pose._neckRot, pose._rightHipRot, pose._rightKneeRot,
+                          pose._rightAnkleRot, pose._rightShoulderRot, pose._rightElbowRot, pose._leftHipRot,
+                          pose._leftKneeRot, pose._leftAnkleRot, pose._leftShoulderRot, pose._leftElbowRot]
+
+        jointVelocities = [pose._chestVel, pose._neckVel, pose._rightHipVel, pose._rightKneeVel,
+                           pose._rightAnkleVel, pose._rightShoulderVel, pose._rightElbowVel, pose._leftHipVel,
+                           pose._leftKneeVel, pose._leftAnkleVel, pose._leftShoulderVel, pose._leftElbowVel]
+        self._pybullet_client.resetJointStatesMultiDof(self.humanoid_uid, indices,
+                                                    jointPositions, jointVelocities)
