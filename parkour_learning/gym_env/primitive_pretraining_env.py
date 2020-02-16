@@ -17,22 +17,23 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 
 class PrimitivePretrainingEnv(gym.Env):
+    mocap_files = ['run.txt', 'run.txt', 'jump_and_roll.txt', 'vaulting.txt']
+    # mocap_files = ['jump_and_roll.txt']
+    mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):
         self.action_repeat = 10
         self.timestep_length = 1 / 500
         self.time_limit = 10
-        self.min_time_per_mocap = 0.8
-        self.time_in_episode = self.time_of_mocap = self.completed_mocap_cycles = None
-        self.mocap_data_folder = osp.join(osp.dirname(__file__), '../motions')
+        self.min_time_per_mocap = 1
+        self.time_in_episode = self.time_of_mocap = self.time_since_mocap_change = self.completed_mocap_cycles = None
         self.bullet_client = self._bullet_connect(render)
         self.bullet_client.setAdditionalSearchPath(os.path.dirname(__file__) + '/bullet_data')
         self._plane_id = self.bullet_client.loadURDF("plane.urdf", [0, 0, 0],
                                                      self.bullet_client.getQuaternionFromEuler([-math.pi * 0.5, 0, 0]),
                                                      useMaximalCoordinates=True)
-        self.mocap_objects = self.get_all_mocap_data()
         self.bullet_client.setGravity(0, -9.8, 0)
-        self.bullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.9)
+        self.bullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.95)
         self.bullet_client.setTimeStep(self.timestep_length)
         self.humanoid = Humanoid(self.bullet_client, self.timestep_length)
         self.mocap_humanoid = Humanoid(self.bullet_client, self.timestep_length)
@@ -40,9 +41,9 @@ class PrimitivePretrainingEnv(gym.Env):
         self.mocap_humanoid.set_alpha(0.7)
         self.pose_interpolator = HumanoidPoseInterpolator()
         self.current_mocap = None
+        self.mocap_obects = []
         self.action_dim = 43
         self.obs_dim = 196
-        self.mocap_obects = []
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(43,))
         self.observation_space = gym.spaces.Dict({
             'state': gym.spaces.Box(low=-1, high=1, shape=(196,)),
@@ -58,47 +59,34 @@ class PrimitivePretrainingEnv(gym.Env):
         return bullet_client
 
     def reset(self):
-        # sample random mocap file
         self.set_random_mocap_file()
         self.time_in_episode = 0
-
-        # sample random start time for mocap motion
-        mocap_time_fraction = random.uniform(0, 1000) / 1000
-        # self.humanoid.reset(mocap_time_fraction)
         return self.get_observation()
-
-    def get_all_mocap_data(self):
-        mocap_data_objects = []
-        for filename in os.listdir(self.mocap_data_folder):
-            if filename.endswith(".txt"):
-                mocap_filename = os.path.join(self.mocap_data_folder, filename)
-                mocap_data_objects.append(MotionCaptureData(mocap_filename))
-        return mocap_data_objects
 
     def step(self, action):
         if randint(0, 1000) < 0:
             self.set_random_mocap_file()
             self.time_of_mocap = 0
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
-        desired_pose[:7] = 0
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
+        desired_pose[:7] = 0
         for i in range(self.action_repeat):
             # self.humanoid.step()
             self.set_mocap_pose(self.mocap_humanoid)
-            # self.humanoid.computeAndApplyPDForces(desired_pose)
+            self.humanoid.computeAndApplyPDForces(desired_pose)
             self.time_in_episode += self.timestep_length
             self.time_of_mocap += self.timestep_length
+            self.time_since_mocap_change += self.timestep_length
             self.bullet_client.stepSimulation()
 
         reward = self.get_reward()
-        print(self.time_of_mocap)
         done = self.compute_done(reward)
         observation = self.get_observation()
         return observation, reward, done, {}
 
     def compute_done(self, reward):
         done = False
-        if self.time_of_mocap > self.min_time_per_mocap and reward < 0.2:
+        if self.time_since_mocap_change > self.min_time_per_mocap and reward < 0.2:
             done = True
 
         if not self.current_mocap.is_cyclic_motion() and self.completed_mocap_cycles > 0:
@@ -188,8 +176,10 @@ class PrimitivePretrainingEnv(gym.Env):
         self.mocap_obects = []
 
     def set_random_mocap_file(self):
-        self.current_mocap = sample(self.mocap_objects, 1)[0]
+        new_mocap_index = randint(0, len(self.mocap_files) - 1)
+        self.current_mocap = MotionCaptureData(self.mocap_folder + self.mocap_files[new_mocap_index])
         self.time_of_mocap = randint(0, 100 * int(self.current_mocap.cycle_time)) / 100
+        self.time_since_mocap_change = 0
         self.completed_mocap_cycles = 0
         self.set_mocap_pose(self.humanoid)
         self.set_mocap_pose(self.mocap_humanoid)
