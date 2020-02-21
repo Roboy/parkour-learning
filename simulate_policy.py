@@ -12,10 +12,10 @@ from rlpyt.utils.buffer import torchify_buffer, buffer_from_example, numpify_buf
 from mcp_model import PiMCPModel, QofMCPModel
 
 
-def simulate_policy(path_to_params, vision=False):
+def simulate_policy(path_to_params, env_id: str):
     snapshot = torch.load(path_to_params, map_location=torch.device('cpu'))
     agent_state_dict = snapshot['agent_state_dict']
-    env = GymEnvWrapper(gym.make('HumanoidPrimitivePretraining-v0', render=True))
+    env = GymEnvWrapper(gym.make(env_id, render=False))
     agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
     agent = SacAgent(**agent_kwargs)
     agent.initialize(env_spaces=env.spaces)
@@ -42,7 +42,7 @@ def simulate_policy(path_to_params, vision=False):
             # action[0] = action
             rew_pyt[0] = reward
             time.sleep(0.02)
-            env.render(mode='human')
+            # env.render(mode='human')
         print('return: ' + str(reward_sum) + '  num_steps: ' + str(step))
 
 
@@ -50,9 +50,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--path', help='path to params.pkl',
                         default='/home/alex/parkour-learning/data/params.pkl')
-    parser.add_argument('--vision', dest='vision', action='store_true',
-                        help='if vision, observations will contain camera images')
-    parser.add_argument('--no_vision', dest='vision', action='store_false',
-                        help='if no_vision, observations will only contain joint info')
+    parser.add_argument('--pretraining', default=False, action='store_true')
     args = parser.parse_args()
-    simulate_policy(args.path, args.vision)
+    env_id = 'HumanoidPrimitivePretraining-v0' if args.pretraining else 'TrackEnv-v0'
+    simulate_policy(args.path, env_id)
