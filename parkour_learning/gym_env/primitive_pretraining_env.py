@@ -64,7 +64,7 @@ class PrimitivePretrainingEnv(gym.Env):
         return self.get_observation()
 
     def step(self, action):
-        if randint(0, 1000) < 0:
+        if randint(0, 1000) < 5:
             self.set_random_mocap_file()
             self.time_of_mocap = 0
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
@@ -109,7 +109,7 @@ class PrimitivePretrainingEnv(gym.Env):
             cameraDistance=current_camera_info[10],
             cameraYaw=current_camera_info[8],
             cameraPitch=current_camera_info[9],
-            cameraTargetPosition=self._humanoid.get_position())
+            cameraTargetPosition=self.humanoid.get_position())
         if mode != "rgb_array":
             return np.array([])
 
