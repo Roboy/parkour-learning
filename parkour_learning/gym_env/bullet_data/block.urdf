@@ -13,7 +13,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <box size="1.00 1.0 0.25"/>
+        <box size="2.00 1.0 0.35"/>
       </geometry>
       <material name="blockmat">
         <color rgba="0.1 0.7 0.1 1"/>
@@ -22,7 +22,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <box size="1.00 1.0 0.25"/>
+        <box size="2.00 1.0 0.35"/>
       </geometry>
     </collision>
   </link>
