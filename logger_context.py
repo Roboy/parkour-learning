@@ -3,8 +3,23 @@ import os.path as osp
 import json
 from torch.utils.tensorboard.writer import SummaryWriter
 
+def filter_jsonable(input_dict: dict):
+    output_dict = dict()
+    for key, value in input_dict.items():
+        if type(value) == dict:
+            output_dict[key] = filter_jsonable(value)
+        else:
+            try:
+                json.dumps(value)
+                # if successful, no exception
+                output_dict[key] = value
+            except TypeError:
+                # value is not jsonable
+                pass
 
-def config_logger(log_dir='./bullet_data', name='rlpyt_training', log_params=None, snapshot_mode="last"):
+    return output_dict
+
+def config_logger(log_dir='./bullet_data', name='rlpyt_training', log_params: dict=None, snapshot_mode="last"):
     logger.set_snapshot_mode(snapshot_mode)
     logger.set_log_tabular_only(False)
 
@@ -29,5 +44,6 @@ def config_logger(log_dir='./bullet_data', name='rlpyt_training', log_params=Non
         log_params = dict()
     log_params["name"] = name
     log_params["run_ID"] = run_ID
+    log_params = filter_jsonable(log_params)
     with open(params_log_file, "w") as f:
         json.dump(log_params, f)

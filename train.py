@@ -4,7 +4,7 @@ from rlpyt.samplers.parallel.cpu.sampler import CpuSampler, CpuResetCollector
 from rlpyt.samplers.async_.cpu_sampler import AsyncCpuSampler
 from rlpyt.envs.gym import make as gym_make
 from typing import Dict
-from rlpyt.algos.qpg.sac import SAC
+# from rlpyt.algos.qpg.sac import SAC
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.runners.async_rl import AsyncRlEval
@@ -22,6 +22,7 @@ from mcp_model import PiMCPModel, QofMCPModel
 from rlpyt.utils.launching.affinity import affinity_from_code
 from rlpyt.utils.launching.variant import load_variant, update_config
 from robot_traj_info import RobotTrajInfo
+from sac import SAC
 import argparse
 
 
@@ -118,7 +119,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         sampler=sampler,
         affinity=affinity
     )
-    config_logger(log_dir, name='parkour-training', snapshot_mode='best')
+    config_logger(log_dir, name='parkour-training', snapshot_mode='best', log_params=config)
     runner.train()
 
 
