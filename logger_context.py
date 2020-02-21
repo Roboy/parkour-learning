@@ -1,5 +1,6 @@
 import rlpyt.utils.logging.logger as logger
 import os.path as osp
+import subprocess
 import json
 from torch.utils.tensorboard.writer import SummaryWriter
 
@@ -47,3 +48,5 @@ def config_logger(log_dir='./bullet_data', name='rlpyt_training', log_params: di
     log_params = filter_jsonable(log_params)
     with open(params_log_file, "w") as f:
         json.dump(log_params, f)
+        f.write('\n\nlast commit: ' + subprocess.getoutput('git log --max-count=1') + '\n\n')
+        f.write(subprocess.getoutput('git diff'))
