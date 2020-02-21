@@ -17,9 +17,9 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 
 class PrimitivePretrainingEnv(gym.Env):
-    mocap_files = ['run.txt', 'run.txt', 'jump_and_roll.txt', 'vaulting.txt']
-    # mocap_files = ['jump_and_roll.txt']
+    mocap_files = ['run.txt', 'jump_and_roll.txt', 'vaulting.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
+    max_steps_per_episode = 300
 
     def __init__(self, render=False):
         self.action_repeat = 10
@@ -64,14 +64,12 @@ class PrimitivePretrainingEnv(gym.Env):
         return self.get_observation()
 
     def step(self, action):
-        if randint(0, 1000) < 5:
-            self.set_random_mocap_file()
-            self.time_of_mocap = 0
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
         desired_pose[:7] = 0
         for i in range(self.action_repeat):
-            # self.humanoid.step()
+            if self.time_of_mocap/self.current_mocap.cycle_time and not self.current_mocap.is_cyclic_motion:
+                self.set_random_mocap_file()
             self.set_mocap_pose(self.mocap_humanoid)
             self.humanoid.computeAndApplyPDForces(desired_pose)
             self.time_in_episode += self.timestep_length
@@ -89,7 +87,10 @@ class PrimitivePretrainingEnv(gym.Env):
         if self.time_since_mocap_change > self.min_time_per_mocap and reward < 0.2:
             done = True
 
-        if not self.current_mocap.is_cyclic_motion() and self.completed_mocap_cycles > 0:
+        # if not self.current_mocap.is_cyclic_motion() and self.completed_mocap_cycles > 0:
+        #     done = True
+
+        if self.time_in_episode > self.time_limit:
             done = True
 
         return done
