@@ -19,12 +19,11 @@ from parkour_learning.gym_env.humanoid import Humanoid
 class PrimitivePretrainingEnv(gym.Env):
     mocap_files = ['run.txt', 'jump_and_roll.txt', 'vaulting.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
-    max_steps_per_episode = 300
 
     def __init__(self, render=False):
         self.action_repeat = 10
         self.timestep_length = 1 / 500
-        self.time_limit = 6
+        self.time_limit = 3
         self.min_time_per_mocap = 1
         self.time_in_episode = self.time_of_mocap = self.time_since_mocap_change = self.completed_mocap_cycles = None
         self.bullet_client = self._bullet_connect(render)
