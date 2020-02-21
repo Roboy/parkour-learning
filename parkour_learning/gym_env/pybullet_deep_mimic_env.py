@@ -14,7 +14,7 @@ from parkour_learning.gym_env.pd_control.humanoid_stable_pd import HumanoidStabl
 
 class PyBulletDeepMimicEnv(gym.Env):
 
-    def __init__(self, mocap_file_path='humanoid3d_run.txt', render=False):
+    def __init__(self, mocap_file_path='run.txt', render=False):
         self.action_dim = 43
         self.obs_dim = 197
         high = np.ones([self.action_dim])
