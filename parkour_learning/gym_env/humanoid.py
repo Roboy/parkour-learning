@@ -359,7 +359,7 @@ class Humanoid:
 
     def set_with_pose_interpolator(self, pose: HumanoidPoseInterpolator):
         self._pybullet_client.resetBasePositionAndOrientation(self.humanoid_uid, pose._basePos,
-                                                           pose._baseOrn)
+                                                              pose._baseOrn)
         # print('reset to position: ' + str(pose._basePos))
         self._pybullet_client.resetBaseVelocity(self.humanoid_uid, pose._baseLinVel, pose._baseAngVel)
         # indices = [chest, neck, rightHip, rightKnee,
@@ -374,4 +374,9 @@ class Humanoid:
                            pose._rightAnkleVel, pose._rightShoulderVel, pose._rightElbowVel, pose._leftHipVel,
                            pose._leftKneeVel, pose._leftAnkleVel, pose._leftShoulderVel, pose._leftElbowVel]
         self._pybullet_client.resetJointStatesMultiDof(self.humanoid_uid, indices,
-                                                    jointPositions, jointVelocities)
+                                                       jointPositions, jointVelocities)
+
+    def get_head_pos(self):
+        link_states = self._pybullet_client.getLinkStates(self.humanoid_uid, [2])[0]
+        pos = np.array(link_states[4])
+        return pos

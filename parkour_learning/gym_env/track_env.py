@@ -16,12 +16,14 @@ from collections import deque
 
 
 class TrackEnv(gym.Env):
+    camera_img_width = 50
+    camera_img_heigth = 50
 
     def __init__(self, render=False):
         self.action_repeat = 10
         self.timestep_length = 1 / 500
         self.time_limit = 10
-        self.target_xy = np.array([10, 0])
+        self.target_pos = np.array([10, 0, 0])
         if render:
             self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.GUI)
             self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
@@ -65,7 +67,7 @@ class TrackEnv(gym.Env):
             self._pybullet_client.stepSimulation()
 
         # reward = self._humanoid.getReward()
-        goal_distance = np.linalg.norm(np.array(self.humanoid.get_position()[:2]) - self.target_xy)
+        goal_distance = np.linalg.norm(np.array(self.humanoid.get_position()) - self.target_pos)
         self.last_100_goal_distances.append(goal_distance)
         done = self.compute_done()
         reward = 10 - goal_distance
@@ -74,10 +76,28 @@ class TrackEnv(gym.Env):
 
     def get_observation(self):
         state_observation = np.array(self.humanoid.getState())
-        goal_observation = np.array(self.humanoid.get_position()[:2]) - self.target_xy
+        head_pos = self.humanoid.get_head_pos()
+        goal_direction = (self.target_pos - head_pos) / np.linalg.norm(self.target_pos - head_pos)
+        camera_pos = np.array(head_pos) + goal_direction * 0.1
+        view_matrix = self._pybullet_client.computeViewMatrix(
+            cameraEyePosition=camera_pos,  # self.robot.body_xyz + [0, 0, 1],
+            cameraTargetPosition=self.target_pos,
+            cameraUpVector=(0, 1, 0)
+        )
+        proj_matrix = self._pybullet_client.computeProjectionMatrixFOV(
+            fov=60, aspect=1.0,  # float(self._render_width) / self._render_height,
+            nearVal=0.1, farVal=100.0)
+        (_, _, px, _, _) = self._pybullet_client.getCameraImage(
+            width=self.camera_img_width, height=self.camera_img_heigth, viewMatrix=view_matrix,
+            projectionMatrix=proj_matrix,
+            renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
+        )
+        rgb_array = np.array(px)
+        rgb_array = rgb_array[:, :, :3]
+        gray_img = np.mean(rgb_array, axis=2)
         observation = dict(
             state=state_observation,
-            goal=goal_observation
+            goal=gray_img
         )
         return observation
 
