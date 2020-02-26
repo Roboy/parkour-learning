@@ -2,6 +2,7 @@ from train import build_and_train
 import torch
 import argparse
 from mcp_model import PiMCPModel
+from mcp_vision_model import PiMCPModel, QofMCPModel
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, conflict_handler='resolve')
@@ -34,7 +35,8 @@ if __name__ == "__main__":
         snapshot['agent_state_dict']['model'] = PiMCPModel.remove_gating_from_snapshot(model_snapshot_dict)
         snapshot['optimizer_state_dict'] = None
 
-    config_update = dict(agent_kwargs=dict(model_kwargs=dict(freeze_primitives=True)))
+    config_update = dict(agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=True)),
+                         sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')))
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,
