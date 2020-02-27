@@ -104,14 +104,14 @@ class PiMCPModel(torch.nn.Module):
 
     def freeze_primitives(self):
         for param in self.primitives_l1.parameters():
-            param.require_grad = False
+            param.requires_grad = False
         for param in self.primitives_l2.parameters():
-            param.require_grad = False
+            param.requires_grad = False
         for layer3, layer4 in zip(self.primitives_l3s, self.primitives_l4s):
             for param in layer3.parameters():
-                param.require_grad = False
+                param.requires_grad = False
             for param in layer4.parameters():
-                param.require_grad = False
+                param.requires_grad = False
 
     @staticmethod
     def remove_gating_from_snapshot(snapshot_dict):
