@@ -45,8 +45,6 @@ class PiMCPModel(torch.nn.Module):
         conv_out_size = self.conv.conv_out_size(self.height, self.width)
         self.gating_l3 = Linear(conv_out_size + 256, 256)
         self.gating_l4 = Linear(256, num_primitives)
-        if freeze_primitives:
-            self.freeze_primitives()
 
     def forward(self, observation, prev_action, prev_reward):
         """Feedforward layers process as [T*B,H]. Return same leading dims as
@@ -58,6 +56,9 @@ class PiMCPModel(torch.nn.Module):
         camera_obs_flat = observation.goal.view(T * B, 1, self.height, self.width)
         assert not torch.isnan(camera_obs_flat).any(), "goal input is nan"
         assert not torch.isnan(state_input).any(), "state input is nan"
+        print('primitives: ' + str(next(self.primitives_l2.parameters())[0][0]))
+        print('gating: ' + str(next(self.gating_l4.parameters())[0][0]))
+        print('gating: ' + str(next(self.gating_l3.parameters())[0][0]))
         # inputs now with just one batch dimension at front
         cnn_out = self.conv(camera_obs_flat).view(T * B, -1)  # apply conv and flatten afterwards
         gating_state = relu(self.gating_state_l1(state_input))
@@ -102,16 +103,6 @@ class PiMCPModel(torch.nn.Module):
         mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
         return mu, log_std
 
-    def freeze_primitives(self):
-        for param in self.primitives_l1.parameters():
-            param.requires_grad = False
-        for param in self.primitives_l2.parameters():
-            param.requires_grad = False
-        for layer3, layer4 in zip(self.primitives_l3s, self.primitives_l4s):
-            for param in layer3.parameters():
-                param.requires_grad = False
-            for param in layer4.parameters():
-                param.requires_grad = False
 
     @staticmethod
     def remove_gating_from_snapshot(snapshot_dict):
@@ -131,10 +122,14 @@ class PiMCPModel(torch.nn.Module):
         [snapshot_dict.pop(key) for key in keys_to_remove]
         return snapshot_dict
 
-    def parameters(self):
-        x = filter(lambda p: p.requires_grad, super().parameters())
-        return x
-
+    def trainable_parameters(self, recurse=True):
+        for name, param in self.named_parameters(recurse=recurse):
+            if not name.startswith('primitives'):
+            # if name != 'primitives_l4s.2.weight':
+                print('yilding: ' + name)
+                yield param
+            else:
+                print('not yielding: ' + name)
 
 class QofMCPModel(torch.nn.Module):
 
