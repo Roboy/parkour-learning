@@ -131,6 +131,10 @@ class PiMCPModel(torch.nn.Module):
         [snapshot_dict.pop(key) for key in keys_to_remove]
         return snapshot_dict
 
+    def parameters(self):
+        x = filter(lambda p: p.requires_grad, super().parameters())
+        return x
+
 
 class QofMCPModel(torch.nn.Module):
 
