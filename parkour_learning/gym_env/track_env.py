@@ -16,8 +16,8 @@ from collections import deque
 
 
 class TrackEnv(gym.Env):
-    camera_img_width = 50
-    camera_img_heigth = 50
+    camera_img_width = 20
+    camera_img_heigth = 20
 
     def __init__(self, render=False):
         self.action_repeat = 10
@@ -87,17 +87,17 @@ class TrackEnv(gym.Env):
         proj_matrix = self._pybullet_client.computeProjectionMatrixFOV(
             fov=60, aspect=1.0,  # float(self._render_width) / self._render_height,
             nearVal=0.1, farVal=100.0)
-        (_, _, px, _, _) = self._pybullet_client.getCameraImage(
+        (_, _, px, depth_map, _) = self._pybullet_client.getCameraImage(
             width=self.camera_img_width, height=self.camera_img_heigth, viewMatrix=view_matrix,
             projectionMatrix=proj_matrix,
             renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
         )
-        rgb_array = np.array(px)
-        rgb_array = rgb_array[:, :, :3]
-        gray_img = np.mean(rgb_array, axis=2)
+        # rgb_array = np.array(px)
+        # rgb_array = rgb_array[:, :, :3]
+        # gray_img = np.mean(rgb_array, axis=2)
         observation = dict(
             state=state_observation,
-            goal=gray_img
+            goal=depth_map
         )
         return observation
 
