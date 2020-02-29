@@ -93,7 +93,7 @@ class TrackEnv(gym.Env):
         (_, _, px, depth_map, _) = self._pybullet_client.getCameraImage(
             width=self.camera_img_width, height=self.camera_img_heigth, viewMatrix=view_matrix,
             projectionMatrix=proj_matrix,
-            renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
+            renderer=pybullet.ER_TINY_RENDERER
         )
         # rgb_array = np.array(px)
         # rgb_array = rgb_array[:, :, :3]
