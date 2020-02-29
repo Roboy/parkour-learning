@@ -58,12 +58,12 @@ class PiMCPModel(torch.nn.Module):
         assert not torch.isnan(gating).any(), 'gating is nan'
 
         primitives = relu(self.primitives_l1(state_input))
-        primitives = self.primitives_l2(primitives)
+        primitives = relu(self.primitives_l2(primitives))
 
         primitives_means = []
         primitves_stds = []
         for i in range(self.num_primitives):
-            x = self.primitives_l3s[i](primitives)
+            x = relu(self.primitives_l3s[i](primitives))
             x = self.primitives_l4s[i](x)
             primitives_means.append(x[:, :self.action_size])
             # interpret last outputs as log stds
