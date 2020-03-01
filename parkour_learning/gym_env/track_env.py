@@ -110,9 +110,18 @@ class TrackEnv(gym.Env):
     def compute_done(self) -> bool:
         done = self.last_100_goal_distances[-1] < 1
         if len(self.last_100_goal_distances) == self.last_100_goal_distances.maxlen:
-            done = (self.last_100_goal_distances[0] - self.last_100_goal_distances[-1]) < 0.3
+            done = (self.last_100_goal_distances[0] - self.last_100_goal_distances[-1]) < 1
         if self.step_in_episode > self.max_num_steps:
             done = True
+        humanoid_collisions = self._pybullet_client.getContactPoints(bodyA=self.humanoid.humanoid_uid)
+        for collision in humanoid_collisions:
+            humanoid_link = collision[3]
+            # don't know why the plane hase multiple links. But only if the plane link is 0, the result seems correct
+            plane_link = collision[2]
+            left_ankle_id = self.humanoid.joint_indeces['leftAnkle']
+            right_ankle_id = self.humanoid.joint_indeces['rightAnkle']
+            if plane_link == 0 and humanoid_link not in [left_ankle_id, right_ankle_id]:
+                done = True
         return done
 
     def render(self, mode='human'):
