@@ -48,7 +48,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         sac_kwargs=dict(min_steps_learn=0, learning_rate=3e-4, batch_size=1024, replay_size=1e6, discount=0.95),
         ppo_kwargs=dict(minibatches=16, learning_rate=0.0001, discount=0.95, linear_lr_schedule=False,
                         OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.2),
-        sampler_kwargs=dict(batch_T=512, batch_B=8, TrajInfoCls=RobotTrajInfo,
+        sampler_kwargs=dict(batch_T=512, batch_B=24, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="TrackEnv-v0"),
                             eval_n_envs=4,
                             eval_max_steps=1e5,
@@ -64,6 +64,14 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         num_gpus = len(GPUtil.getGPUs())
         if config['algo'] == 'sac' and not serial_mode:
             affinity = make_affinity(n_cpu_core=num_cpus, n_gpu=num_gpus, async_sample=True)
+        elif config['algo'] == 'ppo' and not serial_mode:
+            affinity = dict(
+                        alternating=True,
+                        cuda_idx=0,
+                        workers_cpus=2 * list(range(num_cpus)),
+                        async_sample=True
+                    )
+
         else:
             affinity = make_affinity(n_cpu_core=num_cpus // 2, n_gpu=num_gpus)
     else:
@@ -90,6 +98,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
             SamplerClass = CpuSampler
         else:
             SamplerClass = AlternatingSampler
+            print('affinity: ' + str(affinity))
         algo_kwargs = config['ppo_kwargs']
     elif config['algo'] == 'sac':
         AgentClass = MCPSacAgent
