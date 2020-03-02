@@ -3,6 +3,7 @@ from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.cpu.sampler import CpuSampler, CpuResetCollector
 from rlpyt.samplers.async_.cpu_sampler import AsyncCpuSampler
+from rlpyt.samplers.parallel.gpu.alternating_sampler import AlternatingSampler
 from rlpyt.envs.gym import make as gym_make
 from typing import Dict
 # from rlpyt.algos.qpg.sac import SAC
@@ -88,7 +89,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         if serial_mode:
             SamplerClass = CpuSampler
         else:
-            SamplerClass = GpuSampler
+            SamplerClass = AlternatingSampler
         algo_kwargs = config['ppo_kwargs']
     elif config['algo'] == 'sac':
         AgentClass = MCPSacAgent
