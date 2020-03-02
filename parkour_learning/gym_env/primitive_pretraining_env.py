@@ -77,7 +77,6 @@ class PrimitivePretrainingEnv(gym.Env):
             self.bullet_client.stepSimulation()
 
         reward = self.get_reward()
-        print('reward: ' + str(reward))
         done = self.compute_done(reward)
         observation = self.get_observation()
         return observation, reward, done, {}

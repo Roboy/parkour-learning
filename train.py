@@ -1,10 +1,12 @@
 from rlpyt.samplers.serial.sampler import SerialSampler
 from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
+from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.cpu.sampler import CpuSampler, CpuResetCollector
 from rlpyt.samplers.async_.cpu_sampler import AsyncCpuSampler
 from rlpyt.envs.gym import make as gym_make
 from typing import Dict
 # from rlpyt.algos.qpg.sac import SAC
+from torch.optim.sgd import SGD
 from mcp_sac import SAC
 from mcp_sac_agent import MCPSacAgent
 from rlpyt.agents.qpg.sac_agent import SacAgent
@@ -25,6 +27,7 @@ from rlpyt.utils.launching.affinity import affinity_from_code
 from rlpyt.utils.launching.variant import load_variant, update_config
 from robot_traj_info import RobotTrajInfo
 import argparse
+from mcp_model import PPOMcpModel
 
 
 def make(*args, info_example=None, **kwargs):
@@ -42,16 +45,17 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     config_update: Dict=None):
     config = dict(
         sac_kwargs=dict(min_steps_learn=0, learning_rate=3e-4, batch_size=1024, replay_size=1e6, discount=0.95),
-        ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, value_loss_coeff=0.01, linear_lr_schedule=False),
-        sampler_kwargs=dict(batch_T=5, batch_B=5, TrajInfoCls=RobotTrajInfo,
+        ppo_kwargs=dict(minibatches=16, learning_rate=0.0001, discount=0.95, linear_lr_schedule=False,
+                        OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.2),
+        sampler_kwargs=dict(batch_T=512, batch_B=8, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="TrackEnv-v0"),
-                            eval_n_envs=9,
+                            eval_n_envs=4,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
-        agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=False)),
+        agent_kwargs=dict(ModelCls=PPOMcpModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
-        algo='sac'
+        algo='ppo'
     )
 
     if slot_affinity_code is None:
@@ -81,7 +85,10 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         AgentClass = MujocoFfAgent
         AlgoClass = PPO
         RunnerClass = MinibatchRlEval
-        SamplerClass = CpuSampler
+        if serial_mode:
+            SamplerClass = CpuSampler
+        else:
+            SamplerClass = GpuSampler
         algo_kwargs = config['ppo_kwargs']
     elif config['algo'] == 'sac':
         AgentClass = MCPSacAgent
