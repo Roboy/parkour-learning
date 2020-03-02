@@ -21,7 +21,8 @@ from rlpyt.algos.utils import valid_from_done
 OptInfo = namedtuple("OptInfo",
                      ["q1Loss", "q2Loss", "piLoss",
                       "q1GradNorm", "q2GradNorm", "piGradNorm",
-                      "q1", "q2", "piMu", "piLogStd", "qMeanDiff", "alpha"])
+                      "q1", "q2", "piMu", "piLogStd", "qMeanDiff", "alpha",
+                      "gating", "primitives_mean", "primitives_std"])
 SamplesToBuffer = namedarraytuple("SamplesToBuffer",
                                   ["observation", "action", "reward", "done"])
 SamplesToBufferTl = namedarraytuple("SamplesToBufferTl",
@@ -210,7 +211,7 @@ class SAC(RlAlgorithm):
 
         q1, q2 = self.agent.q(*agent_inputs, action)
         with torch.no_grad():
-            target_action, target_log_pi, _ = self.agent.pi(*target_inputs)
+            target_action, target_log_pi, _, _, _, _ = self.agent.pi(*target_inputs)
             target_q1, target_q2 = self.agent.target_q(*target_inputs, target_action)
         min_target_q = torch.min(target_q1, target_q2)
         target_value = min_target_q - self._alpha * target_log_pi
@@ -221,7 +222,7 @@ class SAC(RlAlgorithm):
         q1_loss = 0.5 * valid_mean((y - q1) ** 2, valid)
         q2_loss = 0.5 * valid_mean((y - q2) ** 2, valid)
 
-        new_action, log_pi, (pi_mean, pi_log_std) = self.agent.pi(*agent_inputs)
+        new_action, log_pi, (pi_mean, pi_log_std), gating, primitive_means, primitive_stds = self.agent.pi(*agent_inputs)
         if not self.reparameterize:
             new_action = new_action.detach()  # No grad.
         log_target1, log_target2 = self.agent.q(*agent_inputs, new_action)
@@ -246,7 +247,7 @@ class SAC(RlAlgorithm):
             alpha_loss = None
 
         losses = (q1_loss, q2_loss, pi_loss, alpha_loss)
-        values = tuple(val.detach() for val in (q1, q2, pi_mean, pi_log_std))
+        values = tuple(val.detach() for val in (q1, q2, pi_mean, pi_log_std, gating, primitive_means[0], primitive_stds[0]))
         return losses, values
 
     def get_action_prior(self, action):
@@ -261,7 +262,7 @@ class SAC(RlAlgorithm):
         """In-place."""
         q1_loss, q2_loss, pi_loss, alpha_loss = losses
         q1_grad_norm, q2_grad_norm, pi_grad_norm = grad_norms
-        q1, q2, pi_mean, pi_log_std = values
+        q1, q2, pi_mean, pi_log_std, gating, primitive_means, primitive_stds = values
         opt_info.q1Loss.append(q1_loss.item())
         opt_info.q2Loss.append(q2_loss.item())
         opt_info.piLoss.append(pi_loss.item())
@@ -274,6 +275,9 @@ class SAC(RlAlgorithm):
         opt_info.piLogStd.extend(pi_log_std[::10].numpy())
         opt_info.qMeanDiff.append(torch.mean(abs(q1 - q2)).item())
         opt_info.alpha.append(self._alpha.item())
+        opt_info.gating.extend(gating[::10].numpy())
+        opt_info.primitives_mean.extend(primitive_means[::10].numpy())
+        opt_info.primitives_std.extend(primitive_stds[::10].numpy())
 
     def optim_state_dict(self):
         return dict(

@@ -6,6 +6,7 @@ from rlpyt.envs.gym import make as gym_make
 from typing import Dict
 # from rlpyt.algos.qpg.sac import SAC
 from mcp_sac import SAC
+from mcp_sac_agent import MCPSACAgent
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.runners.async_rl import AsyncRlEval
@@ -83,7 +84,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         SamplerClass = CpuSampler
         algo_kwargs = config['ppo_kwargs']
     elif config['algo'] == 'sac':
-        AgentClass = SacAgentSafeLoad
+        AgentClass = MCPSACAgent
         AlgoClass = SAC
         algo_kwargs = config['sac_kwargs']
         if not serial_mode:

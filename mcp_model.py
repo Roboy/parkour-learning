@@ -89,7 +89,7 @@ class PiMCPModel(torch.nn.Module):
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
-        return mu, log_std
+        return mu, log_std, gating, primitives_means, primitves_stds
 
     def freeze_primitives(self):
         self.primitives_l1.requires_grad = False
@@ -97,6 +97,9 @@ class PiMCPModel(torch.nn.Module):
         for layer3, layer4 in zip(self.primitives_l3s, self.primitives_l4s):
             layer3.require_grad = False
             layer4.require_grad = False
+
+    def trainable_parameters(self):
+        return self.parameters()
 
     @staticmethod
     def remove_gating_from_snapshot(snapshot_dict):
