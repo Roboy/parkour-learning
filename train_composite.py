@@ -36,7 +36,8 @@ if __name__ == "__main__":
         snapshot['optimizer_state_dict'] = None
 
     config_update = dict(agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=True)),
-                         sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')))
+                         sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
+                         sac_kwargs=dict(discount=0.99))
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,
