@@ -6,18 +6,19 @@ import numpy as np
 import parkour_learning
 import pybulletgym  # register PyBullet enviroments with open ai gym
 import gym_parkour
-from rlpyt.agents.qpg.sac_agent import SacAgent
+# from rlpyt.agents.qpg.sac_agent import SacAgent
+from mcp_sac_agent import MCPSacAgent
 from rlpyt.envs.gym import GymEnvWrapper
 from rlpyt.utils.buffer import torchify_buffer, buffer_from_example, numpify_buffer
 from mcp_model import PiMCPModel, QofMCPModel
-
+# from mcp_vision_model import PiMCPModel, QofMCPModel
 
 def simulate_policy(path_to_params, env_id: str):
     snapshot = torch.load(path_to_params, map_location=torch.device('cpu'))
     agent_state_dict = snapshot['agent_state_dict']
-    env = GymEnvWrapper(gym.make(env_id, render=False))
+    env = GymEnvWrapper(gym.make(env_id, render=True))
     agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
-    agent = SacAgent(**agent_kwargs)
+    agent = MCPSacAgent(**agent_kwargs)
     agent.initialize(env_spaces=env.spaces)
     agent.load_state_dict(agent_state_dict)
     agent.eval_mode(0)
@@ -34,15 +35,17 @@ def simulate_policy(path_to_params, env_id: str):
         reward_sum = 0
         while not done:
             step += 1
+            print(step)
             act_pyt, agent_info = agent.step(obs_pyt, act_pyt, rew_pyt)
             action = numpify_buffer(act_pyt)
+            start = time.time()
             obs, reward, done, info = env.step(action[0])
             reward_sum += reward
             observation[0] = obs
             # action[0] = action
             rew_pyt[0] = reward
             time.sleep(0.02)
-            # env.render(mode='human')
+            env.render(mode='human')
         print('return: ' + str(reward_sum) + '  num_steps: ' + str(step))
 
 

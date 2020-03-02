@@ -1,8 +1,10 @@
 import parkour_learning
 import time
 import gym
+import matplotlib.pyplot as plt
 
-env = gym.make('HumanoidPrimitivePretraining-v0', render=True)
+# env = gym.make('HumanoidPrimitivePretraining-v0', render=True)
+env = gym.make('TrackEnv-v0', render=True)
 
 
 while True:
@@ -15,9 +17,17 @@ while True:
     while not done:
         step += 1
         action = env.action_space.sample()
-        action *=0
-        time.sleep(0.03)
+        # action *=0
+        if step <  30:
+            action[26] = 6
+            action[34] = 6
+        else:
+            action[26] = 0
+        time.sleep(0.015)
+        start = time.time()
         obs, reward, done, info = env.step(action)
-        print(len(obs['goal']))
-        print('reward: ' +str(reward))
+        print('complete step: ' + str(time.time() - start))
+        # print(len(obs['goal']))
+        # print('reward: ' +str(reward))
+        # print('step: ' + str(step))
     print('num steps:' + str(step))

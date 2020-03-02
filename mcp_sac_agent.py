@@ -8,7 +8,7 @@ from rlpyt.utils.collections import namedarraytuple
 
 AgentInfo = namedarraytuple("AgentInfo", ["dist_info"])
 
-class MCPSACAgent(SacAgent):
+class MCPSacAgent(SacAgent):
     def load_state_dict(self, state_dict):
         if 'q1_model' in state_dict.keys():
             self.q1_model.load_state_dict(self.get_updated_dict(self.q1_model.state_dict(), state_dict["q1_model"]))

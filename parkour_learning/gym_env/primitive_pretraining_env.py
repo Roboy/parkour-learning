@@ -17,7 +17,7 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 
 class PrimitivePretrainingEnv(gym.Env):
-    mocap_files = ['run.txt', 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
+    mocap_files = ['run.txt' , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):
@@ -77,6 +77,7 @@ class PrimitivePretrainingEnv(gym.Env):
             self.bullet_client.stepSimulation()
 
         reward = self.get_reward()
+        print('reward: ' + str(reward))
         done = self.compute_done(reward)
         observation = self.get_observation()
         return observation, reward, done, {}

@@ -46,8 +46,6 @@ class PiMCPModel(torch.nn.Module):
         lead_dim, T, B, _ = infer_leading_dims(observation.state, 1)
         goal_input = observation.goal.view(T * B, -1)
         state_input = observation.state.view(T * B, -1)
-        assert not torch.isnan(goal_input).any(), "goal input is nan"
-        assert not torch.isnan(state_input).any(), "state input is nan"
         # inputs now with just one batch dimension at front
         gating_state = relu(self.gating_state_l1(state_input))
         gating_state = relu(self.gating_state_l2(gating_state))
@@ -61,35 +59,29 @@ class PiMCPModel(torch.nn.Module):
         primitives = relu(self.primitives_l2(primitives))
 
         primitives_means = []
-        primitves_stds = []
+        primitives_stds = []
         for i in range(self.num_primitives):
             x = relu(self.primitives_l3s[i](primitives))
             x = self.primitives_l4s[i](x)
             primitives_means.append(x[:, :self.action_size])
             # interpret last outputs as log stds
-            primitves_stds.append(torch.clamp(x[:, self.action_size:], min=1e-5))
-            assert not torch.isnan(primitives_means[i]).any(), 'primitive means is nan print x : ' + str(x)
-            assert not torch.isnan(primitves_stds[i]).any(), 'primitive stds is nan'
+            primitives_stds.append(torch.clamp(x[:, self.action_size:], min=1e-5))
+
         std = goal_input.new_zeros((T * B, self.action_size,))
         mu = goal_input.new_zeros((T * B, self.action_size))
         gating = gating.reshape((T * B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitves_stds[i].clamp(min=1e-5))
-            assert not torch.isnan(x).any(), 'x is nan'
+            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitives_stds[i].clamp(min=1e-5))
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
-            assert not torch.isnan(mu).any() ,'mu is nan ' + str(mu) + str(x) + str(primitives_means)
-        assert not torch.isnan(std).any(), 'std nan: '
+
         std = torch.div(1, std.clamp(min=1e-5))
         mu = torch.mul(mu, std)
-        assert not torch.isnan(std).any(), 'std div nan: '
         log_std = torch.log(std.clamp(min=1e-5))
-        assert not torch.isnan(mu).any(), "mu is nan " + str(mu) + str(std)
-        assert not torch.isnan(log_std).any(), 'log std is nan'
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
-        return mu, log_std, gating, primitives_means, primitves_stds
+        return mu, log_std, gating, primitives_means, primitives_stds
 
     def freeze_primitives(self):
         self.primitives_l1.requires_grad = False
