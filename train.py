@@ -46,9 +46,9 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     config_update: Dict=None):
     config = dict(
         sac_kwargs=dict(min_steps_learn=0, learning_rate=3e-4, batch_size=1024, replay_size=1e6, discount=0.95),
-        ppo_kwargs=dict(minibatches=16, learning_rate=0.0001, discount=0.95, linear_lr_schedule=False,
+        ppo_kwargs=dict(minibatches=4, learning_rate=0.0001, discount=0.95, linear_lr_schedule=False,
                         OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.2),
-        sampler_kwargs=dict(batch_T=512, batch_B=8, TrajInfoCls=RobotTrajInfo,
+        sampler_kwargs=dict(batch_T=32, batch_B=24, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="TrackEnv-v0"),
                             eval_n_envs=4,
                             eval_max_steps=1e5,
