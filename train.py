@@ -64,6 +64,14 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         num_gpus = len(GPUtil.getGPUs())
         if config['algo'] == 'sac' and not serial_mode:
             affinity = make_affinity(n_cpu_core=num_cpus, n_gpu=num_gpus, async_sample=True)
+        elif config['algo'] == 'ppo' and not serial_mode:
+            affinity = dict(
+                        alternating=True,
+                        cuda_idx=0,
+                        workers_cpus=2 * list(range(num_cpus)),
+                        async_sample=True
+                    )
+
         else:
             affinity = make_affinity(n_cpu_core=num_cpus // 2, n_gpu=num_gpus)
     else:
