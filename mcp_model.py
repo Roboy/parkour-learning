@@ -71,7 +71,7 @@ class PiMCPModel(torch.nn.Module):
         mu = goal_input.new_zeros((T * B, self.action_size))
         gating = gating.reshape((T * B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitives_stds[i].clamp(min=1e-5))
+            x = torch.div(gating[:, i], primitives_stds[i].clamp(min=1e-5))
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
 
