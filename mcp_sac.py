@@ -275,9 +275,9 @@ class SAC(RlAlgorithm):
         opt_info.piLogStd.extend(pi_log_std[::10].numpy())
         opt_info.qMeanDiff.append(torch.mean(abs(q1 - q2)).item())
         opt_info.alpha.append(self._alpha.item())
-        opt_info.gating.extend(gating[::10].numpy())
-        opt_info.primitives_mean.extend(primitive_means[::10].numpy())
-        opt_info.primitives_std.extend(primitive_stds[::10].numpy())
+        opt_info.gating.extend(gating[::10].cpu().numpy())
+        opt_info.primitives_mean.extend(primitive_means[::10].cpu().numpy())
+        opt_info.primitives_std.extend(primitive_stds[::10].cpu().numpy())
 
     def optim_state_dict(self):
         return dict(
