@@ -10,15 +10,18 @@ import gym_parkour
 from mcp_sac_agent import MCPSacAgent
 from rlpyt.envs.gym import GymEnvWrapper
 from rlpyt.utils.buffer import torchify_buffer, buffer_from_example, numpify_buffer
-from mcp_model import PiMCPModel, QofMCPModel
+from mcp_model import PiMCPModel, QofMCPModel, PPOMcpModel
+from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
+
 # from mcp_vision_model import PiMCPModel, QofMCPModel
 
 def simulate_policy(path_to_params, env_id: str):
     snapshot = torch.load(path_to_params, map_location=torch.device('cpu'))
     agent_state_dict = snapshot['agent_state_dict']
     env = GymEnvWrapper(gym.make(env_id, render=True))
-    agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
-    agent = MCPSacAgent(**agent_kwargs)
+    # agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
+    # agent = MCPSacAgent(**agent_kwargs)
+    agent = MujocoFfAgent(ModelCls=PPOMcpModel)
     agent.initialize(env_spaces=env.spaces)
     agent.load_state_dict(agent_state_dict)
     agent.eval_mode(0)
