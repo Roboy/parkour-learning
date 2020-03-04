@@ -65,13 +65,13 @@ class PiMCPModel(torch.nn.Module):
             x = self.primitives_l4s[i](x)
             primitives_means.append(x[:, :self.action_size])
             # interpret last outputs as log stds
-            primitives_stds.append(torch.clamp(x[:, self.action_size:], min=1e-5))
+            primitives_stds.append(torch.exp(x[:, self.action_size:]))
 
         std = goal_input.new_zeros((T * B, self.action_size,))
         mu = goal_input.new_zeros((T * B, self.action_size))
         gating = gating.reshape((T * B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:, i], primitives_stds[i].clamp(min=1e-5))
+            x = torch.div(gating[:, i], primitives_stds[i])
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
 
