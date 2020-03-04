@@ -163,7 +163,8 @@ if __name__ == "__main__":
     if args.snapshot_file is not None:
         snapshot = torch.load(args.snapshot_file, map_location=torch.device('cpu'))
 
-    config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HumanoidPrimitivePretraining-v0')))
+    # config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HumanoidPrimitivePretraining-v0')))
+    config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HopperPyBulletEnv-v0')))
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,
