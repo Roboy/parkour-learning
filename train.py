@@ -18,6 +18,8 @@ from rlpyt.utils.launching.affinity import make_affinity
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
 # from rlpyt.algos.pg.ppo import PPO
 from ppo_seperate_learning_rates import PPO
+from rlpyt.algos.qpg.td3 import TD3
+from rlpyt.agents.qpg.td3_agent import Td3Agent
 from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
 import gym
 from sac_agent_safe_load import SacAgentSafeLoad
@@ -46,18 +48,19 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot: Dict=None,
                     config_update: Dict=None):
     config = dict(
-        sac_kwargs=dict(min_steps_learn=0, learning_rate=3e-4, batch_size=1024, replay_size=1e6, discount=0.95),
+        sac_kwargs=dict(reward_scale=10, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.95),
         ppo_kwargs=dict(minibatches=4, learning_rate=2e-5, discount=0.95, linear_lr_schedule=False,
                         OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.2),
+        td3_kwargs=dict(),
         sampler_kwargs=dict(batch_T=32, batch_B=24, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="TrackEnv-v0"),
                             eval_n_envs=4,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
-        agent_kwargs=dict(ModelCls=PPOMcpModel),
+        agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
-        algo='ppo'
+        algo='td3'
     )
 
     if slot_affinity_code is None:
@@ -108,14 +111,10 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
             SamplerClass = AsyncCpuSampler
             RunnerClass = AsyncRlEval
             affinity['cuda_idx'] = 0
-            # create new affinity because async_sample has to be set
-            print('affinity: '  + str(affinity))
-            # affinity= make_affinity(
-            #     n_cpu_core=len(affinity['all_cpus'])//2,  # Use 16 cores across all experiments.
-            #     n_gpu=1,
-            #     async_sample=True,
-            # )
-            # print('affinity after: '  + str(affinity))
+    elif config['algo'] == 'td3':
+        AgentClass = Td3Agent
+        AlgoClass = TD3
+        algo_kwargs = config['td3_kwargs']
 
     if serial_mode:
         SamplerClass = SerialSampler

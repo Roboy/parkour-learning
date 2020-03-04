@@ -81,7 +81,7 @@ class PiMCPModel(torch.nn.Module):
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
-        return mu, log_std, gating, primitives_means, primitives_stds
+        return mu# , log_std , gating, primitives_means, primitives_stds
 
     def freeze_primitives(self):
         self.primitives_l1.requires_grad = False
