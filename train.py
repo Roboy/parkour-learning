@@ -16,8 +16,8 @@ from rlpyt.runners.async_rl import AsyncRlEval
 from logger_context import config_logger
 from rlpyt.utils.launching.affinity import make_affinity
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
-# from rlpyt.algos.pg.ppo import PPO
-from ppo_seperate_learning_rates import PPO
+from rlpyt.algos.pg.ppo import PPO
+# from ppo_seperate_learning_rates import PPO
 from rlpyt.algos.qpg.td3 import TD3
 from rlpyt.agents.qpg.td3_agent import Td3Agent
 from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
@@ -50,17 +50,17 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
     config = dict(
         sac_kwargs=dict(reward_scale=10, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.95),
         ppo_kwargs=dict(minibatches=4, learning_rate=2e-5, discount=0.95, linear_lr_schedule=False,
-                        OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.2),
+                        OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.02),
         td3_kwargs=dict(),
         sampler_kwargs=dict(batch_T=32, batch_B=24, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="TrackEnv-v0"),
                             eval_n_envs=4,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
-        agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel),
+        agent_kwargs=dict(ModelCls=PPOMcpModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
-        algo='td3'
+        algo='ppo'
     )
 
     if slot_affinity_code is None:
