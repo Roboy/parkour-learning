@@ -17,7 +17,7 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 
 class PrimitivePretrainingEnv(gym.Env):
-    mocap_files = ['run.txt' , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
+    mocap_files = ['run.txt']#  , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):
@@ -83,7 +83,7 @@ class PrimitivePretrainingEnv(gym.Env):
 
     def compute_done(self, reward):
         done = False
-        if self.time_since_mocap_change > self.min_time_per_mocap and reward < 0.2:
+        if self.time_since_mocap_change > self.min_time_per_mocap and reward < 0.3:
             done = True
 
         # if not self.current_mocap.is_cyclic_motion() and self.completed_mocap_cycles > 0:
