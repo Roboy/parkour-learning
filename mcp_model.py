@@ -214,13 +214,13 @@ class PPOMcpModel(torch.nn.Module):
         mu = goal_input.new_zeros((T * B, self.action_size))
         gating = gating.reshape((T * B, self.num_primitives, 1)).expand(-1, -1, self.action_size)
         for i in range(self.num_primitives):
-            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitives_stds[i].clamp(min=1e-5))
+            x = torch.div(gating[:, i].expand((T * B, self.action_size)), primitives_stds[i])
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
 
         std = torch.div(1, std.clamp(min=1e-5))
         mu = torch.mul(mu, std)
-        log_std = torch.log(std.clamp(min=1e-5))
+        log_std = torch.log(std)
 
         v = self.v_model(torch.cat((state_input, goal_input), -1)).squeeze(-1)
         # Restore leading dimensions: [T,B], [B], or [], as input.
