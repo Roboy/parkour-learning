@@ -47,10 +47,7 @@ class TrackEnv(gym.Env):
         observation_example = self.get_observation()
         self.observation_space = gym.spaces.Dict({
             'state': gym.spaces.Box(low=-1, high=1, shape=observation_example['state'].shape),
-            'goal':  gym.spaces.Dict({
-                'camera': gym.spaces.Box(low=-1, high=1, shape=observation_example['goal']['camera'].shape),
-                'relative_target': gym.spaces.Box(low=-100, high=100, shape=(2,))
-            })
+            'goal': gym.spaces.Box(low=-1, high=1, shape=observation_example['goal'].shape),
         })
         self.last_100_goal_distances = None
 
@@ -100,10 +97,7 @@ class TrackEnv(gym.Env):
         # gray_img = np.mean(rgb_array, axis=2)
         observation = dict(
             state=state_observation,
-            goal=dict(
-                camera=depth_map,
-                relative_target=goal_direction[:2]
-            )
+            goal=depth_map,
         )
         return observation
 
