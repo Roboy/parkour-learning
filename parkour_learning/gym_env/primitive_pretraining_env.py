@@ -97,6 +97,8 @@ class PrimitivePretrainingEnv(gym.Env):
     def get_observation(self):
         state_observation = np.array(self.humanoid.getState())
         goal_observation = self.get_mocap_observation()
+        assert not np.isnan(goal_observation).any(), 'goal observation is nan: ' + str(goal_observation)
+        assert not np.isnan(state_observation).any(), 'state observation is nan: ' + str(state_observation)
         observation = dict(
             state=state_observation,
             goal=goal_observation
