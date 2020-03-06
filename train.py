@@ -6,10 +6,10 @@ from rlpyt.samplers.async_.cpu_sampler import AsyncCpuSampler
 from rlpyt.samplers.parallel.gpu.alternating_sampler import AlternatingSampler
 from rlpyt.envs.gym import make as gym_make
 from typing import Dict
-# from rlpyt.algos.qpg.sac import SAC
+from rlpyt.algos.qpg.sac import SAC
 from torch.optim.sgd import SGD
-from mcp_sac import SAC
-from mcp_sac_agent import MCPSacAgent
+# from mcp_sac import SAC
+# from mcp_sac_agent import MCPSacAgent
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.runners.async_rl import AsyncRlEval
@@ -48,19 +48,20 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot: Dict=None,
                     config_update: Dict=None):
     config = dict(
-        sac_kwargs=dict(reward_scale=10, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.95),
+        sac_kwargs=dict(reward_scale=1, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.97),
         ppo_kwargs=dict(minibatches=4, learning_rate=2e-5, discount=0.95, linear_lr_schedule=False,
                         OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.02),
         td3_kwargs=dict(),
-        sampler_kwargs=dict(batch_T=32, batch_B=24, TrajInfoCls=RobotTrajInfo,
+        sampler_kwargs=dict(batch_T=5, batch_B=12, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="TrackEnv-v0"),
-                            eval_n_envs=4,
+                            eval_n_envs=12,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
-        agent_kwargs=dict(ModelCls=PPOMcpModel),
+        agent_kwargs=dict(model_kwargs=dict(hidden_sizes=[512, 256, 256]),
+                          q_model_kwargs=dict(hidden_sizes=[512, 256, 256])),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
-        algo='ppo'
+        algo='sac'
     )
 
     if slot_affinity_code is None:
@@ -104,7 +105,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
             SamplerClass = AlternatingSampler
         algo_kwargs = config['ppo_kwargs']
     elif config['algo'] == 'sac':
-        AgentClass = MCPSacAgent
+        AgentClass = SacAgent
         AlgoClass = SAC
         algo_kwargs = config['sac_kwargs']
         if not serial_mode:

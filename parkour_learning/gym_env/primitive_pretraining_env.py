@@ -44,10 +44,7 @@ class PrimitivePretrainingEnv(gym.Env):
         self.action_dim = 43
         self.obs_dim = 196
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(43,))
-        self.observation_space = gym.spaces.Dict({
-            'state': gym.spaces.Box(low=-1, high=1, shape=(196,)),
-            'goal': gym.spaces.Box(low=-1, high=1, shape=(80,)),
-        })
+        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(276,))
 
     def _bullet_connect(self, render: bool) -> BulletClient:
         if render:
@@ -99,11 +96,7 @@ class PrimitivePretrainingEnv(gym.Env):
         goal_observation = self.get_mocap_observation()
         assert not np.isnan(goal_observation).any(), 'goal observation is nan: ' + str(goal_observation)
         assert not np.isnan(state_observation).any(), 'state observation is nan: ' + str(state_observation)
-        observation = dict(
-            state=state_observation,
-            goal=goal_observation
-        )
-        return observation
+        return np.concatenate((state_observation, goal_observation))
 
     def render(self, mode='human'):
         current_camera_info = self.bullet_client.getDebugVisualizerCamera()
