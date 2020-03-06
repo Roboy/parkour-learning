@@ -48,11 +48,11 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot: Dict=None,
                     config_update: Dict=None):
     config = dict(
-        sac_kwargs=dict(reward_scale=1, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.97),
+        sac_kwargs=dict(reward_scale=1, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.995),
         ppo_kwargs=dict(minibatches=4, learning_rate=2e-5, discount=0.95, linear_lr_schedule=False,
                         OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.02),
         td3_kwargs=dict(),
-        sampler_kwargs=dict(batch_T=5, batch_B=12, TrajInfoCls=RobotTrajInfo,
+        sampler_kwargs=dict(batch_T=5, batch_B=5, TrajInfoCls=RobotTrajInfo,
                             env_kwargs=dict(id="TrackEnv-v0"),
                             eval_n_envs=12,
                             eval_max_steps=1e5,
@@ -137,7 +137,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         sampler=sampler,
         affinity=affinity
     )
-    config_logger(log_dir, name='parkour-training', snapshot_mode='best', log_params=config)
+    config_logger(log_dir, name='parkour-training', snapshot_mode='last', log_params=config)
     runner.train()
 
 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     if args.snapshot_file is not None:
         snapshot = torch.load(args.snapshot_file, map_location=torch.device('cpu'))
 
-    config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HumanoidPrimitivePretraining-v0')))
+    config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HopperPyBulletEnv-v0')))
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,
