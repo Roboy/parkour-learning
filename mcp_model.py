@@ -53,7 +53,6 @@ class PiMCPModel(torch.nn.Module):
         gating_goal = relu(self.gating_goal_l2(gating_goal))
         gating = relu(self.gating_l3(torch.cat((gating_state, gating_goal), -1)))
         gating = sigmoid(self.gating_l4(gating))
-        gating = torch.div(gating, torch.sum(gating))
         assert not torch.isnan(gating).any(), 'gating is nan'
         gating = torch.div(gating, torch.sum(gating, dim=-1).reshape(T*B, 1).expand_as(gating))
 
