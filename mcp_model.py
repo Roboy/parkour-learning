@@ -53,7 +53,9 @@ class PiMCPModel(torch.nn.Module):
         gating_goal = relu(self.gating_goal_l2(gating_goal))
         gating = relu(self.gating_l3(torch.cat((gating_state, gating_goal), -1)))
         gating = sigmoid(self.gating_l4(gating))
+        gating = torch.div(gating, torch.sum(gating))
         assert not torch.isnan(gating).any(), 'gating is nan'
+        gating = torch.div(gating, torch.sum(gating, dim=-1).reshape(T*B, 1).expand_as(gating))
 
         primitives = relu(self.primitives_l1(state_input))
         primitives = relu(self.primitives_l2(primitives))
@@ -81,7 +83,7 @@ class PiMCPModel(torch.nn.Module):
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
-        return mu# , log_std , gating, primitives_means, primitives_stds
+        return mu, log_std , gating, primitives_means, primitives_stds
 
     def freeze_primitives(self):
         self.primitives_l1.requires_grad = False
@@ -197,6 +199,7 @@ class PPOMcpModel(torch.nn.Module):
         gating = relu(self.gating_l3(torch.cat((gating_state, gating_goal), -1)))
         gating = sigmoid(self.gating_l4(gating))
         assert not torch.isnan(gating).any(), 'gating is nan'
+        gating = torch.div(gating, torch.sum(gating, dim=-1).reshape(T*B, 1).expand_as(gating))
 
         primitives = relu(self.primitives_l1(state_input))
         primitives = relu(self.primitives_l2(primitives))

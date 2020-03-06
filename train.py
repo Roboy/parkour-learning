@@ -48,7 +48,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot: Dict=None,
                     config_update: Dict=None):
     config = dict(
-        sac_kwargs=dict(reward_scale=10, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.95),
+        sac_kwargs=dict(reward_scale=10, min_steps_learn=0, learning_rate=3e-4, batch_size=512, replay_size=1e6, discount=0.95),
         ppo_kwargs=dict(minibatches=4, learning_rate=2e-5, discount=0.95, linear_lr_schedule=False, OptimCls=SGD,
                         optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.02, entropy_loss_coeff=0),
         td3_kwargs=dict(),
