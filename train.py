@@ -57,8 +57,8 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                             eval_n_envs=12,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
-        agent_kwargs=dict(model_kwargs=dict(hidden_sizes=[512, 256, 256]),
-                          q_model_kwargs=dict(hidden_sizes=[512, 256, 256])),
+        agent_kwargs=dict(model_kwargs=dict(hidden_sizes=[1024, 512]),
+                          q_model_kwargs=dict(hidden_sizes=[1024, 512])),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
         algo='sac'
@@ -163,7 +163,8 @@ if __name__ == "__main__":
     if args.snapshot_file is not None:
         snapshot = torch.load(args.snapshot_file, map_location=torch.device('cpu'))
 
-    config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HopperPyBulletEnv-v0')))
+    # config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HopperPyBulletEnv-v0')))
+    config_update = dict(sampler_kwargs=dict(env_kwargs=dict(id='HumanoidPrimitivePretraining-v0')))
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,
