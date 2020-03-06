@@ -1,11 +1,13 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
   <model name='RoboyParkourTrack'>
+  <static>1</static>
     <link name='mesh_link'>
       <!-- <kinematic>1</kinematic> -->
+      
       <visual name='track_visual'>
         <inertial>
-         <mass>10.001</mass>
+         <mass>10000.0</mass>
          <!-- inertia based on solid sphere 2/5 mr^2 -->
          <inertia>
            <ixx>1</ixx>
@@ -18,16 +20,16 @@
        </inertial>
         <geometry>
           <mesh>
-            <uri>model://RoboyParkourTrack/RoboyParkourChallengeTrack-Simplistic-2019-09-23.stl</uri>
-            <scale>0.0001 0.0001 0.0001</scale>
+            <uri>model://RoboyParkourTrack/convex_track.obj</uri>
+            <scale>0.1 0.1 0.1</scale>
           </mesh>
         </geometry>
       </visual>
       <collision name='track_collision'>
         <geometry>
           <mesh>
-            <uri>model://RoboyParkourTrack/RoboyParkourChallengeTrack-Simplistic-2019-09-23.stl</uri>
-            <scale>0.0001 0.0001 0.0001</scale>
+            <uri>model://RoboyParkourTrack/convex_track.obj</uri>
+            <scale>0.1 0.1 0.1</scale>
           </mesh>
         </geometry>
         <surface>
@@ -55,7 +57,7 @@
             </ode>
           </contact>
         </surface>
-        <max_contacts>1000</max_contacts>
+        <max_contacts>10000</max_contacts>
       </collision>
       <self_collide>0</self_collide>
       <inertial>
@@ -71,6 +73,6 @@
       </inertial>
       <enable_wind>0</enable_wind>
     </link>
-    <pose frame=''>3 0 2 0 -1.5707963 3.1416 0</pose>
+    <pose frame=''>3 0 2 0 0 3.1416 0</pose>
   </model>
 </sdf>

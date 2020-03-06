@@ -154,7 +154,7 @@
         <visual name='track_visual'>
           <geometry>
             <mesh>
-              <uri>model://RoboyParkourTrack/RoboyParkourChallengeTrack-Simplistic-2019-09-23.stl</uri>
+              <uri>model://RoboyParkourTrack/RoboyParkourChallengeTrack-Simplistic-2019-09-23.obj</uri>
               <scale>0.0001 0.0001 0.0001</scale>
             </mesh>
           </geometry>
@@ -162,7 +162,7 @@
         <collision name='track_collision'>
           <geometry>
             <mesh>
-              <uri>model://RoboyParkourTrack/RoboyParkourChallengeTrack-Simplistic-2019-09-23.stl</uri>
+              <uri>model://RoboyParkourTrack/RoboyParkourChallengeTrack-Simplistic-2019-09-23.obj</uri>
               <scale>0.0001 0.0001 0.0001</scale>
             </mesh>
           </geometry>
