@@ -156,6 +156,7 @@ class PPOMcpModel(torch.nn.Module):
             freeze_primitives=False,
             hidden_sizes=None  # necessary for rlpyt compatibility
     ):
+        self.normalize_observations = False
         super().__init__()
         assert hasattr(observation_shape, 'state'), "mcp model requires observation dict to contain state attribute"
         assert hasattr(observation_shape, 'goal'), "mcp model requires observation to contain goal attribute"
@@ -257,3 +258,6 @@ class PPOMcpModel(torch.nn.Module):
                           ]
         [snapshot_dict.pop(key) for key in keys_to_remove]
         return snapshot_dict
+
+    def update_obs_rms(self, observation):
+        pass
