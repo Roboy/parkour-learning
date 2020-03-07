@@ -63,6 +63,7 @@ class PrimitivePretrainingEnv(gym.Env):
         return self.get_observation()
 
     def step(self, action):
+        action = np.clip(action, a_min=-3, a_max=3)
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
         desired_pose[:7] = 0
