@@ -43,10 +43,10 @@ class PrimitivePretrainingEnv(gym.Env):
         self.mocap_obects = []
         self.action_dim = 43
         self.obs_dim = 196
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(43,))
+        self.action_space = gym.spaces.Box(low=-3, high=3, shape=(43,))
         self.observation_space = gym.spaces.Dict({
-            'state': gym.spaces.Box(low=-1, high=1, shape=(196,)),
-            'goal': gym.spaces.Box(low=-1, high=1, shape=(80,)),
+            'state': gym.spaces.Box(low=-3, high=3, shape=(196,)),
+            'goal': gym.spaces.Box(low=-3, high=3, shape=(80,)),
         })
 
     def _bullet_connect(self, render: bool) -> BulletClient:
