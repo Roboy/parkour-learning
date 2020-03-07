@@ -17,7 +17,7 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 
 class PrimitivePretrainingEnv(gym.Env):
-    mocap_files = ['walk.txt', 'run.txt'] # , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
+    mocap_files = ['run.txt'] #, 'walk.txt' , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):
@@ -206,10 +206,10 @@ class PrimitivePretrainingEnv(gym.Env):
     def get_reward(self):
         # from DeepMimic double cSceneImitate::CalcRewardImitate
         # todo: compensate for ground height in some parts, once we move to non-flat terrain
-        pose_w = 0.5
-        vel_w = 0.05
+        pose_w = 0.65 # 0.5
+        vel_w = 0.1 # 0.05
         end_eff_w = 0.15
-        root_w = 0.2
+        root_w = 0.1 # 0.2
         com_w = 0  # 0.1
 
         total_w = pose_w + vel_w + end_eff_w + root_w + com_w
