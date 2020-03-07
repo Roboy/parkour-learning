@@ -92,11 +92,11 @@ class PiVisionModel(torch.nn.Module):
         super().__init__()
         assert hasattr(observation_shape, 'camera'), "VisionFfModel requires observation to contain 'camera' attr"
         assert hasattr(observation_shape,
-                       'robot_state'), "VisionFfModel requires observation to contain 'robot_state' attr"
-        self.height, self.width, self.channels = observation_shape.camera
-        robot_state_shape = observation_shape.robot_state[0]
+                       'state'), "VisionFfModel requires observation to contain 'robot_state' attr"
+        self.height, self.width = observation_shape.camera
+        robot_state_shape = observation_shape.state[0]
         self.conv = Conv2dModel(
-            in_channels=self.channels,
+            in_channels=1,
             channels=[9, 18],
             kernel_sizes=[3, 3],
             strides=[2, 2],
@@ -123,10 +123,10 @@ class PiVisionModel(torch.nn.Module):
         input, can be [T,B], [B], or []."""
 
         # Infer (presence of) leading dimensions: [T,B], [B], or [].
-        lead_dim, T, B, _ = infer_leading_dims(observation.robot_state, 1)
+        lead_dim, T, B, _ = infer_leading_dims(observation.state, 1)
 
-        robot_state_obs_flat = observation.robot_state.view(T * B, -1)
-        camera_obs_flat = observation.camera.view(T * B, self.channels, self.height, self.width)
+        robot_state_obs_flat = observation.state.view(T * B, -1)
+        camera_obs_flat = observation.camera.view(T * B, 1, self.height, self.width)
         robot_state = self.robot_state_mlp(robot_state_obs_flat)
         cnn_out = self.conv(camera_obs_flat).view(T * B, -1)  # apply conv and flatten afterwards
         mlp_head_in = torch.cat((robot_state, cnn_out), -1)
@@ -149,11 +149,11 @@ class QofMuVisionModel(torch.nn.Module):
         super().__init__()
         assert hasattr(observation_shape, 'camera'), "VisionFfModel requires observation to contain 'camera' attr"
         assert hasattr(observation_shape,
-                       'robot_state'), "VisionFfModel requires observation to contain 'robot_state' attr"
-        self.height, self.width, self.channels = observation_shape.camera
-        robot_state_shape = observation_shape.robot_state[0]
+                       'state'), "VisionFfModel requires observation to contain 'robot_state' attr"
+        self.height, self.width = observation_shape.camera
+        robot_state_shape = observation_shape.state[0]
         self.conv = Conv2dModel(
-            in_channels=self.channels,
+            in_channels=1,
             channels=[8, 20],
             kernel_sizes=[5, 4],
             strides=[3, 3],
@@ -179,10 +179,10 @@ class QofMuVisionModel(torch.nn.Module):
         input, can be [T,B], [B], or []."""
 
         # Infer (presence of) leading dimensions: [T,B], [B], or [].
-        lead_dim, T, B, _ = infer_leading_dims(observation.robot_state, 1)
+        lead_dim, T, B, _ = infer_leading_dims(observation.state, 1)
 
-        robot_state_obs_flat = observation.robot_state.view(T * B, -1)
-        camera_obs_flat = observation.camera.view(T * B, self.channels, self.height, self.width)
+        robot_state_obs_flat = observation.state.view(T * B, -1)
+        camera_obs_flat = observation.camera.view(T * B, 1, self.height, self.width)
         robot_state = self.robot_state_mlp(robot_state_obs_flat)
         cnn_out = self.conv(camera_obs_flat).view(T * B, -1)  # apply conv and flatten afterwards
         # q_input = torch.cat(
