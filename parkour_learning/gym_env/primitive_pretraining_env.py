@@ -84,11 +84,14 @@ class PrimitivePretrainingEnv(gym.Env):
 
     def compute_done(self, reward):
         done = False
-        if self.time_since_mocap_change > self.min_time_per_mocap and reward < 0.3:
-            done = True
-
-        # if not self.current_mocap.is_cyclic_motion() and self.completed_mocap_cycles > 0:
-        #     done = True
+        collisions = self.bullet_client.getContactPoints(bodyA=self.humanoid.humanoid_uid, bodyB=self._plane_id)
+        for collision in collisions:
+            collided_link = collision[3]
+            if collided_link not in [self.humanoid.joint_indeces['leftAnkle'],
+                                     self.humanoid.joint_indeces['rightAnkle'],
+                                     self.humanoid.joint_indeces['leftElbow'],
+                                     self.humanoid.joint_indeces['rightElbow']]:
+                done = True
 
         if self.time_in_episode > self.time_limit:
             done = True
