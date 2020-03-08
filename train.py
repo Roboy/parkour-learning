@@ -63,6 +63,13 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         algo='sac'
     )
 
+    try:
+        variant = load_variant(log_dir)
+        config = update_config(config, variant)
+    except FileNotFoundError:
+        if config_update is not None:
+            config = update_config(config, config_update)
+
     if slot_affinity_code is None:
         num_cpus = multiprocessing.cpu_count()  # divide by two due to hyperthreading
         num_gpus = len(GPUtil.getGPUs())
@@ -79,13 +86,6 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
             affinity = make_affinity(n_cpu_core=num_cpus // 2, n_gpu=num_gpus)
     else:
         affinity = affinity_from_code(slot_affinity_code)
-
-    try:
-        variant = load_variant(log_dir)
-        config = update_config(config, variant)
-    except FileNotFoundError:
-        if config_update is not None:
-            config = update_config(config, config_update)
 
     agent_state_dict = optimizer_state_dict = None
     if config['snapshot'] is not None:
