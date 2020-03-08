@@ -49,7 +49,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     snapshot: Dict=None,
                     config_update: Dict=None):
     config = dict(
-        sac_kwargs=dict(reward_scale=1, min_steps_learn=0, learning_rate=3e-4, batch_size=256, replay_size=1e6, discount=0.995),
+        sac_kwargs=dict(reward_scale=1, min_steps_learn=0, learning_rate=3e-4, batch_size=1024, replay_size=1e6, discount=0.995),
         ppo_kwargs=dict(minibatches=4, learning_rate=2e-5, discount=0.95, linear_lr_schedule=False,
                         OptimCls=SGD, optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.02),
         td3_kwargs=dict(),
@@ -68,7 +68,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         num_cpus = multiprocessing.cpu_count()  # divide by two due to hyperthreading
         num_gpus = len(GPUtil.getGPUs())
         if config['algo'] == 'sac' and not serial_mode:
-            affinity = make_affinity(n_cpu_core=num_cpus, n_gpu=num_gpus, async_sample=True)
+            affinity = make_affinity(n_cpu_core=num_cpus, n_gpu=num_gpus, async_sample=True, set_affinity=False)
         elif config['algo'] == 'ppo' and not serial_mode:
             affinity = dict(
                         alternating=True,
