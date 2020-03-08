@@ -6,7 +6,7 @@ import numpy as np
 import parkour_learning
 import pybulletgym  # register PyBullet enviroments with open ai gym
 import gym_parkour
-# from rlpyt.agents.qpg.sac_agent import SacAgent
+from rlpyt.agents.qpg.sac_agent import SacAgent
 from mcp_sac_agent import MCPSacAgent
 from rlpyt.envs.gym import GymEnvWrapper
 from rlpyt.utils.buffer import torchify_buffer, buffer_from_example, numpify_buffer
@@ -19,9 +19,13 @@ def simulate_policy(path_to_params, env_id: str):
     snapshot = torch.load(path_to_params, map_location=torch.device('cpu'))
     agent_state_dict = snapshot['agent_state_dict']
     env = GymEnvWrapper(gym.make(env_id, render=True))
-    # agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
-    # agent = MCPSacAgent(**agent_kwargs)
-    agent = MujocoFfAgent(ModelCls=PPOMcpModel)
+    # env = gym.make('HopperPyBulletEnv-v0')
+    # env.render()
+    # env = GymEnvWrapper(env)
+    agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
+    agent = MCPSacAgent(**agent_kwargs)
+    # agent = SacAgent(model_kwargs=dict(hidden_sizes=[512,256, 256]), q_model_kwargs=dict(hidden_sizes=[512, 256, 256]))
+    # agent = MujocoFfAgent(ModelCls=PPOMcpModel)
     agent.initialize(env_spaces=env.spaces)
     agent.load_state_dict(agent_state_dict)
     agent.eval_mode(0)
