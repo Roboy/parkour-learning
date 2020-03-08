@@ -16,9 +16,9 @@ from rlpyt.runners.async_rl import AsyncRlEval
 from logger_context import config_logger
 from rlpyt.utils.launching.affinity import make_affinity
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
-from rlpyt.algos.pg.ppo import PPO
-# from ppo_seperate_learning_rates import PPO
-from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
+# from rlpyt.algos.pg.ppo import PPO
+from mcp_ppo_agent import McpPPOAgent
+from ppo_seperate_learning_rates import PPO
 import gym
 from sac_agent_safe_load import SacAgentSafeLoad
 import torch
@@ -92,14 +92,14 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         optimizer_state_dict = config['snapshot']['optimizer_state_dict']
 
     if config['algo'] == 'ppo':
-        AgentClass = MujocoFfAgent
+        AgentClass = McpPPOAgent
         AlgoClass = PPO
         RunnerClass = MinibatchRlEval
         SamplerClass = CpuSampler if serial_mode else AlternatingSampler
         algo_kwargs = config['ppo_kwargs']
         agent_kwargs = config['ppo_agent_kwargs']
     elif config['algo'] == 'sac':
-        AgentClass = SacAgent
+        AgentClass = SacAgentSafeLoad
         AlgoClass = SAC
         algo_kwargs = config['sac_kwargs']
         agent_kwargs = config['sac_agent_kwargs']

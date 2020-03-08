@@ -5,7 +5,7 @@ from mcp_model import PiMCPModel
 from mcp_vision_model import PiMCPModel, QofMCPModel, PPOMcpModel
 
 
-algo = 'ppo'
+algo = 'sac'
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, conflict_handler='resolve')
