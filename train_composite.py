@@ -2,7 +2,10 @@ from train import build_and_train
 import torch
 import argparse
 from mcp_model import PiMCPModel
-from mcp_vision_model import PiMCPModel, QofMCPModel
+from mcp_vision_model import PiMCPModel, QofMCPModel, PPOMcpModel
+
+
+algo = 'sac'
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, conflict_handler='resolve')
@@ -32,12 +35,23 @@ if __name__ == "__main__":
         # only keep primitives
         model_snapshot_dict = snapshot['agent_state_dict']['model']
         snapshot['agent_state_dict'] = dict()
-        snapshot['agent_state_dict']['model'] = PiMCPModel.remove_gating_from_snapshot(model_snapshot_dict)
+        if algo == 'sac':
+            snapshot['agent_state_dict']['model'] = PiMCPModel.remove_gating_from_snapshot(model_snapshot_dict)
+        elif algo == 'ppo':
+            snapshot['agent_state_dict']['model'] = PPOMcpModel.remove_gating_from_snapshot(model_snapshot_dict)
         snapshot['optimizer_state_dict'] = None
 
-    config_update = dict(agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=True)),
+    if algo == 'sac':
+        config_update = dict(sac_agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=True)),
                          sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
-                         sac_kwargs=dict(discount=0.99))
+                         sac_kwargs=dict(discount=0.99),
+                         algo='sac')
+    elif algo == 'ppo':
+        config_update = dict(ppo_agent_kwargs=dict(ModelCls=PPOMcpModel, model_kwargs=dict(freeze_primitives=True)),
+                             sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
+                             ppo_kwargs=dict(discount=0.99),
+                             algo='ppo')
+
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,

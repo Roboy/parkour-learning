@@ -47,7 +47,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     config_update: Dict=None):
     config = dict(
         sac_kwargs=dict(learning_rate=3e-4, batch_size=512, replay_size=1e6, discount=0.95),
-        ppo_kwargs=dict(minibatches=4, learning_rate=2e-5, discount=0.95, linear_lr_schedule=False, OptimCls=SGD,
+        ppo_kwargs=dict(minibatches=4, learning_rate=2e-1, discount=0.95, linear_lr_schedule=False, OptimCls=SGD,
                         optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.02, entropy_loss_coeff=0),
         td3_kwargs=dict(),
         sampler_kwargs=dict(batch_T=32, batch_B=5, TrajInfoCls=RobotTrajInfo,
@@ -56,7 +56,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
         sac_agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=False)),
-        ppo_agent_kwargs=dict(ModelCls=PPOMcpModel),
+        ppo_agent_kwargs=dict(ModelCls=PPOMcpModel, model_kwargs=dict(freeze_primitives=False)),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
         algo='sac'
