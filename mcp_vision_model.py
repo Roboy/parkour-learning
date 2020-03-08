@@ -267,6 +267,12 @@ class PPOMcpModel(torch.nn.Module):
                           'gating_l3.bias',
                           'gating_l4.weight',
                           'gating_l4.bias',
+                          'v_model.model.0.weight',
+                          'v_model.model.0.bias',
+                          'v_model.model.2.weight',
+                          'v_model.model.2.bias',
+                          'v_model.model.4.weight',
+                          'v_model.model.4.bias',
                           ]
         [snapshot_dict.pop(key) for key in keys_to_remove]
         return snapshot_dict

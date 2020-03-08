@@ -33,12 +33,14 @@ if __name__ == "__main__":
     elif args.primitives_snapshot is not None:
         snapshot = torch.load(args.primitives_snapshot, map_location=torch.device('cpu'))
         # only keep primitives
-        model_snapshot_dict = snapshot['agent_state_dict']['model']
-        snapshot['agent_state_dict'] = dict()
         if algo == 'sac':
+            model_snapshot_dict = snapshot['agent_state_dict']['model']
+            snapshot['agent_state_dict'] = dict()
             snapshot['agent_state_dict']['model'] = PiMCPModel.remove_gating_from_snapshot(model_snapshot_dict)
         elif algo == 'ppo':
-            snapshot['agent_state_dict']['model'] = PPOMcpModel.remove_gating_from_snapshot(model_snapshot_dict)
+            model_snapshot_dict = snapshot['agent_state_dict']
+            snapshot['agent_state_dict'] = dict()
+            snapshot['agent_state_dict'] = PPOMcpModel.remove_gating_from_snapshot(model_snapshot_dict)
         snapshot['optimizer_state_dict'] = None
 
     if algo == 'sac':
