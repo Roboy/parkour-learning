@@ -35,7 +35,8 @@ class TrackEnv(gym.Env):
                                                         self._pybullet_client.getQuaternionFromEuler(
                                                             [-math.pi * 0.5, 0, 0]))
         # self._pybullet_client.loadURDF('track.urdf', useFixedBase=1, basePosition=(7, 0, 0), baseOrientation=(0, 0, 0, -1))
-        self._pybullet_client.loadSDF('RoboyParkourTrack/model.sdf')
+        track_id = self._pybullet_client.loadSDF('RoboyParkourTrack/model.sdf')[0]
+        self._pybullet_client.resetBasePositionAndOrientation(track_id, [5, 0, -2], [0, 0, 0, 1])
         self.humanoid = Humanoid(self._pybullet_client, time_step_length=self.timestep_length)
         self._pybullet_client.setGravity(0, -9.8, 0)
         self._pybullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.9)
