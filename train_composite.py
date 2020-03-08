@@ -5,7 +5,7 @@ from mcp_model import PiMCPModel
 from mcp_vision_model import PiMCPModel, QofMCPModel, PPOMcpModel
 
 
-algo = 'sac'
+algo = 'ppo'
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, conflict_handler='resolve')
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     elif algo == 'ppo':
         config_update = dict(ppo_agent_kwargs=dict(ModelCls=PPOMcpModel, model_kwargs=dict(freeze_primitives=True)),
                              sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
-                             ppo_kwargs=dict(discount=0.99),
+                             ppo_kwargs=dict(discount=0.99, learning_rate=5e-5),
                              algo='ppo')
 
 
