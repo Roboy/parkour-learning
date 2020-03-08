@@ -17,6 +17,7 @@ class TrackEnv(gym.Env):
         self.timestep_length = 1 / 240
         self.time_limit = 10
         self.target_pos = np.array([10, 0, 0])
+        self.last_goal_distance = None
         if render:
             self._pybullet_client = bullet_client.BulletClient(connection_mode=pybullet.GUI)
             self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
@@ -51,7 +52,13 @@ class TrackEnv(gym.Env):
         self.humanoid.reset()
         self.last_100_goal_distances = deque(maxlen=100)
         self.step_in_episode = 0
+        self.last_goal_distance = self.get_goal_distance()
         return self.get_observation()
+
+    def get_goal_distance(self):
+        goal_distance = np.linalg.norm(np.array(self.humanoid.get_position()) - self.target_pos)
+        return goal_distance
+
 
     def step(self, action):
         self.step_in_episode += 1
@@ -66,7 +73,8 @@ class TrackEnv(gym.Env):
         goal_distance = np.linalg.norm(np.array(self.humanoid.get_position()) - self.target_pos)
         self.last_100_goal_distances.append(goal_distance)
         done = self.compute_done()
-        reward = 10 - goal_distance
+        reward = 30 * (self.last_goal_distance - self.get_goal_distance())
+        self.last_goal_distance = self.get_goal_distance()
         observation = self.get_observation()
         return observation, reward, done, {}
 
