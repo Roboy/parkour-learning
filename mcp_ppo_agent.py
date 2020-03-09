@@ -14,7 +14,8 @@ class McpPPOAgent(MujocoFfAgent):
         self.load_state_dict()
 
     def load_state_dict(self):
-        self.model.load_state_dict(self.get_updated_dict(self.model.state_dict(), self._model_state_dict))
+        if self._model_state_dict is not None:
+            self.model.load_state_dict(self.get_updated_dict(self.model.state_dict(), self._model_state_dict))
 
     @staticmethod
     def get_updated_dict(original_dict: Dict, dict_update: Dict):
