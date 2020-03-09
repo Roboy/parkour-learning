@@ -4,6 +4,7 @@ import subprocess
 import json
 from torch.utils.tensorboard.writer import SummaryWriter
 
+
 def filter_jsonable(input_dict: dict):
     output_dict = dict()
     for key, value in input_dict.items():
@@ -20,7 +21,8 @@ def filter_jsonable(input_dict: dict):
 
     return output_dict
 
-def config_logger(log_dir='./bullet_data', name='rlpyt_training', log_params: dict=None, snapshot_mode="last"):
+
+def config_logger(log_dir='./bullet_data', name='rlpyt_training', log_params: dict = None, snapshot_mode="last"):
     logger.set_snapshot_mode(snapshot_mode)
     logger.set_log_tabular_only(False)
 

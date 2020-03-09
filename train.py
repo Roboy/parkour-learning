@@ -1,39 +1,30 @@
-from rlpyt.samplers.serial.sampler import SerialSampler
-from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
-from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
-from rlpyt.samplers.parallel.cpu.sampler import CpuSampler, CpuResetCollector
-from rlpyt.samplers.async_.cpu_sampler import AsyncCpuSampler
-from rlpyt.samplers.parallel.gpu.alternating_sampler import AlternatingSampler
-from rlpyt.envs.gym import make as gym_make
-from typing import Dict
-from rlpyt.algos.qpg.sac import SAC
-from torch.optim.sgd import SGD
-# from mcp_sac import SAC
-# from mcp_sac_agent import MCPSacAgent
-from rlpyt.agents.qpg.sac_agent import SacAgent
-from rlpyt.runners.minibatch_rl import MinibatchRlEval
-from rlpyt.runners.async_rl import AsyncRlEval
-from logger_context import config_logger
-from rlpyt.utils.launching.affinity import make_affinity
-from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
-# from rlpyt.algos.pg.ppo import PPO
-from mcp_ppo_agent import McpPPOAgent
-from ppo_seperate_learning_rates import PPO
-import gym
-from sac_agent_safe_load import SacAgentSafeLoad
+import argparse
 import torch
 import GPUtil
 import multiprocessing
-from mcp_model import PiMCPModel, QofMCPModel
+import gym
+from typing import Dict
+from torch.optim.sgd import SGD
+from rlpyt.samplers.serial.sampler import SerialSampler
+from rlpyt.samplers.parallel.cpu.sampler import CpuSampler, CpuResetCollector
+from rlpyt.samplers.async_.cpu_sampler import AsyncCpuSampler
+from rlpyt.samplers.parallel.gpu.alternating_sampler import AlternatingSampler
+from rlpyt.runners.minibatch_rl import MinibatchRlEval
+from rlpyt.runners.async_rl import AsyncRlEval
 from rlpyt.utils.launching.affinity import affinity_from_code
 from rlpyt.utils.launching.variant import load_variant, update_config
-from robot_traj_info import RobotTrajInfo
-import argparse
+from logger_context import config_logger
+from rlpyt.utils.launching.affinity import make_affinity
+from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
+from ppo_seperate_learning_rates import PPO
+from rlpyt.algos.qpg.sac import SAC
+from mcp_ppo_agent import McpPPOAgent
+from sac_agent_safe_load import SacAgentSafeLoad
+from mcp_model import PiMCPModel, QofMCPModel
 from mcp_model import PPOMcpModel
 
 
 def make(*args, info_example=None, **kwargs):
-    import gym_parkour
     import pybulletgym
     import parkour_learning
     info_example = {'timeout': 0}
@@ -43,15 +34,16 @@ def make(*args, info_example=None, **kwargs):
 
 def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                     serial_mode=True,
-                    snapshot: Dict=None,
-                    config_update: Dict=None):
+                    snapshot: Dict = None,
+                    config_update: Dict = None):
+    # default configuration
     config = dict(
         sac_kwargs=dict(learning_rate=3e-4, batch_size=512, replay_size=1e6, discount=0.95),
         ppo_kwargs=dict(minibatches=4, learning_rate=2e-1, discount=0.95, linear_lr_schedule=False, OptimCls=SGD,
                         optim_kwargs=dict(momentum=0.9), gae_lambda=0.95, ratio_clip=0.02, entropy_loss_coeff=0,
                         clip_grad_norm=100),
         td3_kwargs=dict(),
-        sampler_kwargs=dict(batch_T=32, batch_B=5, TrajInfoCls=RobotTrajInfo,
+        sampler_kwargs=dict(batch_T=32, batch_B=5,
                             env_kwargs=dict(id="TrackEnv-v0"),
                             eval_n_envs=4,
                             eval_max_steps=1e5,
@@ -63,6 +55,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         algo='sac'
     )
 
+    # try to update default config
     try:
         variant = load_variant(log_dir)
         config = update_config(config, variant)
@@ -70,6 +63,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         if config_update is not None:
             config = update_config(config, config_update)
 
+    # select correct affinity for configuration
     if slot_affinity_code is None:
         num_cpus = multiprocessing.cpu_count()  # divide by two due to hyperthreading
         num_gpus = len(GPUtil.getGPUs())
@@ -77,16 +71,17 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
             affinity = make_affinity(n_cpu_core=num_cpus, n_gpu=num_gpus, async_sample=True, set_affinity=False)
         elif config['algo'] == 'ppo' and not serial_mode:
             affinity = dict(
-                        alternating=True,
-                        cuda_idx=0,
-                        workers_cpus=2 * list(range(num_cpus)),
-                        async_sample=True
-                    )
+                alternating=True,
+                cuda_idx=0,
+                workers_cpus=2 * list(range(num_cpus)),
+                async_sample=True
+            )
         else:
             affinity = make_affinity(n_cpu_core=num_cpus // 2, n_gpu=num_gpus)
     else:
         affinity = affinity_from_code(slot_affinity_code)
 
+    # continue training from saved state_dict if provided
     agent_state_dict = optimizer_state_dict = None
     if config['snapshot'] is not None:
         agent_state_dict = config['snapshot']['agent_state_dict']
@@ -114,6 +109,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
     else:
         raise NotImplementedError('algorithm not implemented')
 
+    # make debugging easier in serial mode
     if serial_mode:
         config['runner_kwargs']['log_interval_steps'] = 1e3
         config['sac_kwargs']['min_steps_learn'] = 0
@@ -133,6 +129,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         affinity=affinity
     )
     config_logger(log_dir, name='parkour-training', snapshot_mode='best', log_params=config)
+    # start training
     runner.train()
 
 
@@ -149,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument('--log_dir', required=False,
                         help='path to directory where log folder will be; Overwrites log_dir_positional')
     parser.add_argument('--snapshot_file', help='path to snapshot params.pkl containing state_dicts',
-                        default=None)  # '/home/alex/reinforcement/deepmove/logs/run_13/params.pkl')
+                        default=None)
 
     args = parser.parse_args()
     log_dir = args.log_dir or args.log_dir_positional or './data'

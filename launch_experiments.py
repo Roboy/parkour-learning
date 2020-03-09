@@ -4,6 +4,9 @@ from rlpyt.utils.launching.affinity import encode_affinity, quick_affinity_code
 from rlpyt.utils.launching.exp_launcher import run_experiments
 from rlpyt.utils.launching.variant import make_variants, VariantLevel
 
+
+# script to launch hyperparameter search
+
 num_cpus = multiprocessing.cpu_count()
 num_gpus = len(GPUtil.getAvailable())
 

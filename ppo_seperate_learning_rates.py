@@ -14,6 +14,7 @@ LossInputs = namedarraytuple("LossInputs",
 
 
 class PPO(PolicyGradientAlgo):
+    # PPO algorithm that supports seperate learning rates for value function and policy
 
     def __init__(
             self,

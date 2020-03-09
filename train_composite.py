@@ -1,11 +1,9 @@
 from train import build_and_train
 import torch
 import argparse
-from mcp_model import PiMCPModel
 from mcp_vision_model import PiMCPModel, QofMCPModel, PPOMcpModel
 
-
-algo = 'sac'
+algo = 'ppo'
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, conflict_handler='resolve')
@@ -32,7 +30,7 @@ if __name__ == "__main__":
         snapshot = torch.load(args.snapshot_file, map_location=torch.device('cpu'))
     elif args.primitives_snapshot is not None:
         snapshot = torch.load(args.primitives_snapshot, map_location=torch.device('cpu'))
-        # only keep primitives
+        # only load weights of primitives
         if algo == 'sac':
             model_snapshot_dict = snapshot['agent_state_dict']['model']
             snapshot['agent_state_dict'] = dict()
@@ -44,16 +42,16 @@ if __name__ == "__main__":
         snapshot['optimizer_state_dict'] = None
 
     if algo == 'sac':
-        config_update = dict(sac_agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel, model_kwargs=dict(freeze_primitives=True)),
-                         sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
-                         sac_kwargs=dict(discount=0.99),
-                         algo='sac')
+        config_update = dict(sac_agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel,
+                                                   model_kwargs=dict(freeze_primitives=True)),
+                             sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
+                             sac_kwargs=dict(discount=0.99),
+                             algo='sac')
     elif algo == 'ppo':
         config_update = dict(ppo_agent_kwargs=dict(ModelCls=PPOMcpModel, model_kwargs=dict(freeze_primitives=True)),
                              sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
                              ppo_kwargs=dict(discount=0.99, learning_rate=5e-5),
                              algo='ppo')
-
 
     build_and_train(slot_affinity_code=args.slot_affinity_code,
                     log_dir=log_dir,

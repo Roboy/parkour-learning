@@ -3,6 +3,7 @@ from typing import Dict
 
 
 class SacAgentSafeLoad(SacAgent):
+    # Sac agent that loads state dict even when keys are missing; useful for training mcp model on new task
     def load_state_dict(self, state_dict):
         if 'q1_model' in state_dict.keys():
             self.q1_model.load_state_dict(self.get_updated_dict(self.q1_model.state_dict(), state_dict["q1_model"]))

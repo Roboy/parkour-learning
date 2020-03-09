@@ -1,10 +1,9 @@
-import numpy as np
 import torch
-
 from rlpyt.utils.tensor import infer_leading_dims, restore_leading_dims
 from rlpyt.models.mlp import MlpModel
 from rlpyt.models.conv2d import Conv2dModel
 
+# simple convolutional SAC and PPO model for dict observations with keys 'robot_state' and 'camera'
 
 class VisionFfModel(torch.nn.Module):
 
@@ -48,16 +47,6 @@ class VisionFfModel(torch.nn.Module):
             output_size=1
         )
 
-        # if mu_nonlinearity is not None:
-        #     self.mu = torch.nn.Sequential(mu_mlp, mu_nonlinearity())
-        # else:
-        #     self.mu = mu_mlp
-        # self.v = MlpModel(
-        #     input_size=64,
-        #     hidden_sizes=hidden_sizes,
-        #     output_size=1,
-        #     nonlinearity=hidden_nonlinearity,
-        # )
         self.log_std = torch.nn.Parameter(init_log_std * torch.ones(action_size))
 
     def forward(self, observation, prev_action, prev_reward):

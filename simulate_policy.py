@@ -19,10 +19,10 @@ from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
 def simulate_policy(path_to_params, env_id: str):
     snapshot = torch.load(path_to_params, map_location=torch.device('cpu'))
     agent_state_dict = snapshot['agent_state_dict']
-    env = GymEnvWrapper(gym.make(env_id, render=True))
-    # env = gym.make('HopperPyBulletEnv-v0')
-    # env.render()
-    # env = GymEnvWrapper(env)
+    # env = GymEnvWrapper(gym.make(env_id, render=True))
+    env = gym.make('HopperPyBulletEnv-v0')
+    env.render()
+    env = GymEnvWrapper(env)
     # agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
     # agent = SacAgent(**agent_kwargs)
     agent = SacAgent(model_kwargs=dict(hidden_sizes=[512,256, 256]), q_model_kwargs=dict(hidden_sizes=[512, 256, 256]))

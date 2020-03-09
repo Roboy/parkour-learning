@@ -1,23 +1,20 @@
 import numpy as np
-import math
 import copy
-from random import sample, randint
+from random import randint
 import math
 import os
 import os.path as osp
 from pybullet_utils.bullet_client import BulletClient
 from parkour_learning.gym_env.pd_control.humanoid_pose_interpolator import HumanoidPoseInterpolator
 import pybullet
-import random
 import gym, gym.spaces, gym.utils
 from parkour_learning.gym_env.motion_capture_data import MotionCaptureData
-from parkour_learning.gym_env.pd_control.humanoid_stable_pd import HumanoidStablePD
-from parkour_learning.gym_env.humanoid_mimic import HumanoidMimic
 from parkour_learning.gym_env.humanoid import Humanoid
 
 
 class PrimitivePretrainingEnv(gym.Env):
-    mocap_files = ['run.txt'] #, 'walk.txt' , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
+    # select list of mocap files to use
+    mocap_files = ['run.txt']  # , 'walk.txt' , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):
@@ -68,7 +65,7 @@ class PrimitivePretrainingEnv(gym.Env):
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
         desired_pose[:7] = 0
         for i in range(self.action_repeat):
-            if self.time_of_mocap/self.current_mocap.cycle_time and not self.current_mocap.is_cyclic_motion:
+            if self.time_of_mocap / self.current_mocap.cycle_time and not self.current_mocap.is_cyclic_motion:
                 self.set_random_mocap_file()
             self.set_mocap_pose(self.mocap_humanoid)
             self.humanoid.computeAndApplyPDForces(desired_pose)
@@ -78,11 +75,11 @@ class PrimitivePretrainingEnv(gym.Env):
             self.bullet_client.stepSimulation()
 
         reward = self.get_reward()
-        done = self.compute_done(reward)
+        done = self.compute_done()
         observation = self.get_observation()
         return observation, reward, done, {}
 
-    def compute_done(self, reward):
+    def compute_done(self):
         done = False
         collisions = self.bullet_client.getContactPoints(bodyA=self.humanoid.humanoid_uid, bodyB=self._plane_id)
         for collision in collisions:
@@ -121,17 +118,12 @@ class PrimitivePretrainingEnv(gym.Env):
 
         render_width = 320
         render_height = 240
-        base_pos = [0, 0, 0]
-        if (hasattr(self, 'robot')):
-            if (hasattr(self.robot, 'body_xyz')):
-                base_pos = self.robot.body_xyz
-        target = [0, 0, 0]
-
+        base_pos = self.humanoid.get_position()
         view_matrix = self.bullet_client.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=base_pos,
-            distance=self._cam_dist,
-            yaw=self._cam_yaw,
-            pitch=self._cam_pitch,
+            distance=current_camera_info[10],
+            yaw=current_camera_info[8],
+            pitch=current_camera_info[9],
             roll=0,
             upAxisIndex=2)
         proj_matrix = self.bullet_client.computeProjectionMatrixFOV(
@@ -196,7 +188,8 @@ class PrimitivePretrainingEnv(gym.Env):
         return observation vector base on mocap data
         """
         mocap_cycle_fraction = self.time_of_mocap / self.current_mocap.cycle_time
-        next_frame_index = math.ceil(mocap_cycle_fraction * self.current_mocap.num_frames) % self.current_mocap.num_frames
+        next_frame_index = math.ceil(
+            mocap_cycle_fraction * self.current_mocap.num_frames) % self.current_mocap.num_frames
         next_frame = self.current_mocap.get_frame_data(next_frame_index)
         next_next_frame = self.current_mocap.get_frame_data((next_frame_index + 1) % self.current_mocap.num_frames)
         next_joint_positions = next_frame[4:]
@@ -206,10 +199,10 @@ class PrimitivePretrainingEnv(gym.Env):
     def get_reward(self):
         # from DeepMimic double cSceneImitate::CalcRewardImitate
         # todo: compensate for ground height in some parts, once we move to non-flat terrain
-        pose_w = 0.65 # 0.5
-        vel_w = 0.1 # 0.05
+        pose_w = 0.65  # 0.5
+        vel_w = 0.1  # 0.05
         end_eff_w = 0.15
-        root_w = 0.1 # 0.2
+        root_w = 0.1  # 0.2
         com_w = 0  # 0.1
 
         total_w = pose_w + vel_w + end_eff_w + root_w + com_w
@@ -376,7 +369,8 @@ class PrimitivePretrainingEnv(gym.Env):
 
         return reward
 
-    def quatMul(self, q1, q2):
+    @staticmethod
+    def quatMul(q1, q2):
         return [
             q1[3] * q2[0] + q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1],
             q1[3] * q2[1] + q1[1] * q2[3] + q1[2] * q2[0] - q1[0] * q2[2],
@@ -384,7 +378,8 @@ class PrimitivePretrainingEnv(gym.Env):
             q1[3] * q2[3] - q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2]
         ]
 
-    def calcRootAngVelErr(self, vel0, vel1):
+    @staticmethod
+    def calcRootAngVelErr(vel0, vel1):
         diff = [vel0[0] - vel1[0], vel0[1] - vel1[1], vel0[2] - vel1[2]]
         return diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]
 
@@ -396,11 +391,11 @@ class PrimitivePretrainingEnv(gym.Env):
 
     def disable_all_collisions(self, humanoid: Humanoid):
         self.bullet_client.setCollisionFilterGroupMask(humanoid.humanoid_uid,
-                                                          -1,
-                                                          collisionFilterGroup=0,
-                                                          collisionFilterMask=0)
+                                                       -1,
+                                                       collisionFilterGroup=0,
+                                                       collisionFilterMask=0)
         for j in range(self.bullet_client.getNumJoints(humanoid.humanoid_uid)):
             self.bullet_client.setCollisionFilterGroupMask(humanoid.humanoid_uid,
-                                                              j,
-                                                              collisionFilterGroup=0,
-                                                              collisionFilterMask=0)
+                                                           j,
+                                                           collisionFilterGroup=0,
+                                                           collisionFilterMask=0)

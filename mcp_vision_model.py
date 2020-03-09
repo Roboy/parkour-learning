@@ -7,6 +7,7 @@ from torch.nn import ModuleList
 from rlpyt.models.conv2d import Conv2dModel
 
 
+# MCP models with convolutional layers for goal observation
 
 class PiMCPModel(torch.nn.Module):
 
@@ -89,7 +90,7 @@ class PiMCPModel(torch.nn.Module):
             assert not torch.isnan(x).any(), 'x is nan'
             std = torch.add(std, x)
             mu = torch.add(mu, torch.mul(x, primitives_means[i]))
-            assert not torch.isnan(mu).any() ,'mu is nan ' + str(mu) + str(x) + str(primitives_means)
+            assert not torch.isnan(mu).any(), 'mu is nan ' + str(mu) + str(x) + str(primitives_means)
         assert not torch.isnan(std).any(), 'std nan: '
         std = torch.div(1, std.clamp(min=1e-5))
         mu = torch.mul(mu, std)
@@ -119,6 +120,7 @@ class PiMCPModel(torch.nn.Module):
                           ]
         [snapshot_dict.pop(key) for key in keys_to_remove]
         return snapshot_dict
+
 
 class QofMCPModel(torch.nn.Module):
 
@@ -162,7 +164,7 @@ class QofMCPModel(torch.nn.Module):
         relative_target_flat = observation.goal.relative_target.view(T * B, -1)
         state = relu(self.robot_state_mlp(state_obs_flat))
         # cnn_out = self.conv(camera_obs_flat).view(T * B, -1)  # apply conv and flatten afterwards
-        mlp_head_in = torch.cat((state, relative_target_flat, action.view(T*B, -1)), -1)
+        mlp_head_in = torch.cat((state, relative_target_flat, action.view(T * B, -1)), -1)
         q = self.mlp(mlp_head_in).squeeze(-1)
         q = restore_leading_dims(q, lead_dim, T, B)
         return q
