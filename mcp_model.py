@@ -52,7 +52,7 @@ class PiMCPModel(torch.nn.Module):
         gating_goal = relu(self.gating_goal_l1(goal_input))
         gating_goal = relu(self.gating_goal_l2(gating_goal))
         gating = relu(self.gating_l3(torch.cat((gating_state, gating_goal), -1)))
-        gating = sigmoid(self.gating_l4(gating))
+        gating = torch.softmax(self.gating_l4(gating), dim=-1)
         assert not torch.isnan(gating).any(), 'gating is nan'
 
         primitives = relu(self.primitives_l1(state_input))
@@ -81,7 +81,7 @@ class PiMCPModel(torch.nn.Module):
 
         # Restore leading dimensions: [T,B], [B], or [], as input.
         mu, log_std = restore_leading_dims((mu, log_std), lead_dim, T, B)
-        return mu# , log_std , gating, primitives_means, primitives_stds
+        return mu, log_std #, gating, primitives_means, primitives_stds
 
     def freeze_primitives(self):
         self.primitives_l1.requires_grad = False
@@ -154,6 +154,7 @@ class PPOMcpModel(torch.nn.Module):
             freeze_primitives=False,
             hidden_sizes=None  # necessary for rlpyt compatibility
     ):
+        self.normalize_observations = False
         super().__init__()
         assert hasattr(observation_shape, 'state'), "mcp model requires observation dict to contain state attribute"
         assert hasattr(observation_shape, 'goal'), "mcp model requires observation to contain goal attribute"
@@ -195,7 +196,7 @@ class PPOMcpModel(torch.nn.Module):
         gating_goal = relu(self.gating_goal_l1(goal_input))
         gating_goal = relu(self.gating_goal_l2(gating_goal))
         gating = relu(self.gating_l3(torch.cat((gating_state, gating_goal), -1)))
-        gating = sigmoid(self.gating_l4(gating))
+        gating = torch.softmax(self.gating_l4(gating), dim=-1)
         assert not torch.isnan(gating).any(), 'gating is nan'
 
         primitives = relu(self.primitives_l1(state_input))
@@ -208,7 +209,7 @@ class PPOMcpModel(torch.nn.Module):
             x = self.primitives_l4s[i](x)
             primitives_means.append(x[:, :self.action_size])
             # interpret last outputs as log stds
-            primitives_stds.append(exp(x[:, self.action_size:]))
+            primitives_stds.append(exp(x[:, self.action_size:].clamp(min=-20, max=20)))
 
         std = goal_input.new_zeros((T * B, self.action_size,))
         mu = goal_input.new_zeros((T * B, self.action_size))
@@ -254,3 +255,6 @@ class PPOMcpModel(torch.nn.Module):
                           ]
         [snapshot_dict.pop(key) for key in keys_to_remove]
         return snapshot_dict
+
+    def update_obs_rms(self, observation):
+        pass

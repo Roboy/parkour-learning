@@ -8,7 +8,6 @@ from rlpyt.envs.gym import make as gym_make
 from typing import Dict
 from rlpyt.algos.qpg.sac import SAC
 from torch.optim.sgd import SGD
-# from mcp_sac import SAC
 # from mcp_sac_agent import MCPSacAgent
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
@@ -16,11 +15,9 @@ from rlpyt.runners.async_rl import AsyncRlEval
 from logger_context import config_logger
 from rlpyt.utils.launching.affinity import make_affinity
 from rlpyt.envs.gym import GymEnvWrapper, EnvInfoWrapper
-from rlpyt.algos.pg.ppo import PPO
-# from ppo_seperate_learning_rates import PPO
-from rlpyt.algos.qpg.td3 import TD3
-from rlpyt.agents.qpg.td3_agent import Td3Agent
-from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
+# from rlpyt.algos.pg.ppo import PPO
+from mcp_ppo_agent import McpPPOAgent
+from ppo_seperate_learning_rates import PPO
 import gym
 from sac_agent_safe_load import SacAgentSafeLoad
 import torch
@@ -58,7 +55,8 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                             eval_n_envs=12,
                             eval_max_steps=1e5,
                             eval_max_trajectories=10),
-        agent_kwargs=dict(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel),
+        ppo_agent_kwargs=dict(),
+        sac_agent_kwargs=dict(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel),
         runner_kwargs=dict(n_steps=1e9, log_interval_steps=1e5),
         snapshot=snapshot,
         algo='sac'
@@ -76,52 +74,41 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
                         workers_cpus=2 * list(range(num_cpus)),
                         async_sample=True
                     )
-
         else:
             affinity = make_affinity(n_cpu_core=num_cpus // 2, n_gpu=num_gpus)
     else:
         affinity = affinity_from_code(slot_affinity_code)
 
-    try:
-        variant = load_variant(log_dir)
-        config = update_config(config, variant)
-    except FileNotFoundError:
-        if config_update is not None:
-            config = update_config(config, config_update)
-
     agent_state_dict = optimizer_state_dict = None
     if config['snapshot'] is not None:
-        # snapshot = torch.load(config['snapshot_file'], map_location=torch.device('cpu'))
         agent_state_dict = config['snapshot']['agent_state_dict']
         optimizer_state_dict = config['snapshot']['optimizer_state_dict']
 
     if config['algo'] == 'ppo':
-        AgentClass = MujocoFfAgent
+        AgentClass = McpPPOAgent
         AlgoClass = PPO
         RunnerClass = MinibatchRlEval
-        if serial_mode:
-            SamplerClass = CpuSampler
-        else:
-            SamplerClass = AlternatingSampler
+        SamplerClass = CpuSampler if serial_mode else AlternatingSampler
         algo_kwargs = config['ppo_kwargs']
+        agent_kwargs = config['ppo_agent_kwargs']
     elif config['algo'] == 'sac':
         AgentClass = SacAgent
         AlgoClass = SAC
         algo_kwargs = config['sac_kwargs']
-        if not serial_mode:
+        agent_kwargs = config['sac_agent_kwargs']
+        if serial_mode:
+            SamplerClass = SerialSampler
+            RunnerClass = MinibatchRlEval
+        else:
             SamplerClass = AsyncCpuSampler
             RunnerClass = AsyncRlEval
             affinity['cuda_idx'] = 0
-    elif config['algo'] == 'td3':
-        AgentClass = Td3Agent
-        AlgoClass = TD3
-        algo_kwargs = config['td3_kwargs']
+    else:
+        raise NotImplementedError('algorithm not implemented')
 
     if serial_mode:
-        SamplerClass = SerialSampler
-        RunnerClass = MinibatchRlEval
         config['runner_kwargs']['log_interval_steps'] = 1e3
-        config['sac_kwargs']['min_steps_learn'] = 1000
+        config['sac_kwargs']['min_steps_learn'] = 0
 
     sampler = SamplerClass(
         **config['sampler_kwargs'],
@@ -129,7 +116,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         eval_env_kwargs=config['sampler_kwargs']['env_kwargs']
     )
     algo = AlgoClass(**algo_kwargs, initial_optim_state_dict=optimizer_state_dict)
-    agent = AgentClass(initial_model_state_dict=agent_state_dict, **config['agent_kwargs'])
+    agent = AgentClass(initial_model_state_dict=agent_state_dict, **agent_kwargs)
     runner = RunnerClass(
         **config['runner_kwargs'],
         algo=algo,
@@ -137,7 +124,7 @@ def build_and_train(slot_affinity_code=None, log_dir='./data', run_ID=0,
         sampler=sampler,
         affinity=affinity
     )
-    config_logger(log_dir, name='parkour-training', snapshot_mode='last', log_params=config)
+    config_logger(log_dir, name='parkour-training', snapshot_mode='best', log_params=config)
     runner.train()
 
 

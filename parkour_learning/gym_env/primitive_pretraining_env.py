@@ -17,12 +17,12 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 
 class PrimitivePretrainingEnv(gym.Env):
-    mocap_files = ['run.txt'] # , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
+    mocap_files = ['walk.txt'] # , 'run.txt' , 'jump_and_roll.txt', 'vaulting.txt', 'run.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):
-        self.action_repeat = 10
-        self.timestep_length = 1 / 500
+        self.action_repeat = 8
+        self.timestep_length = 1 / 240
         self.time_limit = 3
         self.min_time_per_mocap = 1
         self.time_in_episode = self.time_of_mocap = self.time_since_mocap_change = self.completed_mocap_cycles = None
@@ -44,7 +44,10 @@ class PrimitivePretrainingEnv(gym.Env):
         self.action_dim = 43
         self.obs_dim = 196
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(43,))
-        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(276,))
+        self.observation_space = gym.spaces.Dict({
+            'state': gym.spaces.Box(low=-1, high=1, shape=(196,)),
+            'goal': gym.spaces.Box(low=-1, high=1, shape=(80,)),
+        })
 
     def _bullet_connect(self, render: bool) -> BulletClient:
         if render:
@@ -60,6 +63,7 @@ class PrimitivePretrainingEnv(gym.Env):
         return self.get_observation()
 
     def step(self, action):
+        action = np.clip(action, a_min=-3, a_max=3)
         desired_pose = np.array(self.humanoid.convertActionToPose(action))
         # we need the target root positon and orientation to be zero, to be compatible with deep mimic
         desired_pose[:7] = 0
@@ -80,11 +84,14 @@ class PrimitivePretrainingEnv(gym.Env):
 
     def compute_done(self, reward):
         done = False
-        if self.time_since_mocap_change > self.min_time_per_mocap and reward < 0.3:
-            done = True
-
-        # if not self.current_mocap.is_cyclic_motion() and self.completed_mocap_cycles > 0:
-        #     done = True
+        collisions = self.bullet_client.getContactPoints(bodyA=self.humanoid.humanoid_uid, bodyB=self._plane_id)
+        for collision in collisions:
+            collided_link = collision[3]
+            if collided_link not in [self.humanoid.joint_indeces['leftAnkle'],
+                                     self.humanoid.joint_indeces['rightAnkle'],
+                                     self.humanoid.joint_indeces['leftElbow'],
+                                     self.humanoid.joint_indeces['rightElbow']]:
+                done = True
 
         if self.time_in_episode > self.time_limit:
             done = True
@@ -173,7 +180,7 @@ class PrimitivePretrainingEnv(gym.Env):
     def set_random_mocap_file(self):
         new_mocap_index = randint(0, len(self.mocap_files) - 1)
         self.current_mocap = MotionCaptureData(self.mocap_folder + self.mocap_files[new_mocap_index])
-        self.time_of_mocap = randint(0, int(1000 * self.current_mocap.cycle_time)) / 1000
+        self.time_of_mocap = randint(0, 100 * int(self.current_mocap.cycle_time)) / 100
         self.time_since_mocap_change = 0
         self.completed_mocap_cycles = 0
         self.set_mocap_pose(self.humanoid)

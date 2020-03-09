@@ -1,0 +1,78 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name='RoboyParkourTrack'>
+  <static>1</static>
+    <link name='mesh_link'>
+      <!-- <kinematic>1</kinematic> -->
+      
+      <visual name='track_visual'>
+        <inertial>
+         <mass>10000.0</mass>
+         <!-- inertia based on solid sphere 2/5 mr^2 -->
+         <inertia>
+           <ixx>1</ixx>
+           <iyy>1</iyy>
+           <izz>1</izz>
+           <ixy>0</ixy>
+           <ixz>0</ixz>
+           <iyz>0</iyz>
+         </inertia>
+       </inertial>
+        <geometry>
+          <mesh>
+            <uri>model://RoboyParkourTrack/convex_track.obj</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name='track_collision'>
+        <geometry>
+          <mesh>
+            <uri>model://RoboyParkourTrack/convex_track.obj</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.000000</mu>
+              <mu2>1.000000</mu2>
+              <fdir1>0.000000 0.000000 0.000000</fdir1>
+              <slip1>0.000000</slip1>
+              <slip2>0.000000</slip2>
+            </ode>
+          </friction>
+          <bounce>
+            <restitution_coefficient>0.0500000</restitution_coefficient>
+            <threshold>0.000000</threshold>
+          </bounce>
+          <contact>
+            <ode>
+              <!-- <soft_cfm>0.000000</soft_cfm>
+              <soft_erp>0.200000</soft_erp> -->
+              <!-- <kp>10000000.000000</kp>
+              <kd>100.000000</kd>
+              <max_vel>100.000000</max_vel>
+              <min_depth>0.0001000</min_depth> -->
+            </ode>
+          </contact>
+        </surface>
+        <max_contacts>10000</max_contacts>
+      </collision>
+      <self_collide>0</self_collide>
+      <inertial>
+        <inertia>
+          <ixx>1</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1</iyy>
+          <iyz>0</iyz>
+          <izz>1</izz>
+        </inertia>
+        <mass>1</mass>
+      </inertial>
+      <enable_wind>0</enable_wind>
+    </link>
+    <pose frame=''>3 0 2 0 0 3.1416 0</pose>
+  </model>
+</sdf>
