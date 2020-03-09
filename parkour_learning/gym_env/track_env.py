@@ -1,16 +1,9 @@
 import numpy as np
-from random import sample, randint
 import math
 import os
-import os.path as osp
 from pybullet_utils import bullet_client
-from parkour_learning.gym_env.pd_control.humanoid_pose_interpolator import HumanoidPoseInterpolator
 import pybullet
-import random
 import gym, gym.spaces, gym.utils
-from parkour_learning.gym_env.motion_capture_data import MotionCaptureData
-from parkour_learning.gym_env.pd_control.humanoid_stable_pd import HumanoidStablePD
-from parkour_learning.gym_env.humanoid_mimic import HumanoidMimic
 from parkour_learning.gym_env.humanoid import Humanoid
 from collections import deque
 
@@ -20,8 +13,8 @@ class TrackEnv(gym.Env):
     camera_img_heigth = 20
 
     def __init__(self, render=False):
-        self.action_repeat = 10
-        self.timestep_length = 1 / 500
+        self.action_repeat = 8
+        self.timestep_length = 1 / 240
         self.time_limit = 10
         self.target_pos = np.array([10, 0, 0])
         if render:
@@ -39,7 +32,6 @@ class TrackEnv(gym.Env):
         self.humanoid = Humanoid(self._pybullet_client, time_step_length=self.timestep_length)
         self._pybullet_client.setGravity(0, -9.8, 0)
         self._pybullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.95)
-        # self._humanoid = HumanoidMimic(self._pybullet_client, self.mocap_objects[0], self.timestep_length, False)
         self._pybullet_client.setTimeStep(self.timestep_length)
         self.action_dim = 43
         self.obs_dim = 196

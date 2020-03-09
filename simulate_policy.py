@@ -19,28 +19,34 @@ from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
 def simulate_policy(path_to_params, env_id: str):
     snapshot = torch.load(path_to_params, map_location=torch.device('cpu'))
     agent_state_dict = snapshot['agent_state_dict']
-    # env = GymEnvWrapper(gym.make(env_id, render=True))
-    env = gym.make('HopperPyBulletEnv-v0')
-    env.render()
-    env = GymEnvWrapper(env)
+    env = GymEnvWrapper(gym.make(env_id, render=True))
+    # env = gym.make('HopperPyBulletEnv-v0')
+    # env.render(mode='human')
+    # env = GymEnvWrapper(env)
     # agent_kwargs = dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
     # agent = SacAgent(**agent_kwargs)
-    agent = SacAgent(model_kwargs=dict(hidden_sizes=[512,256, 256]), q_model_kwargs=dict(hidden_sizes=[512, 256, 256]))
-    # agent = MujocoFfAgent(ModelCls=PPOMcpModel)
+    # agent = SacAgent(model_kwargs=dict(hidden_sizes=[512,256, 256]), q_model_kwargs=dict(hidden_sizes=[512, 256, 256]))
+    agent = MujocoFfAgent(ModelCls=PPOMcpModel)
     agent.initialize(env_spaces=env.spaces)
     agent.load_state_dict(agent_state_dict)
     agent.eval_mode(0)
     obs = env.reset()
     observation = buffer_from_example(obs, 1)
-    loop_time = 0.05
+    loop_time = 0.03
     while True:
         observation[0] = env.reset()
         action = buffer_from_example(env.action_space.null_value(), 1)
         reward = np.zeros(1, dtype="float32")
         obs_pyt, act_pyt, rew_pyt = torchify_buffer((observation, action, reward))
+        act_pyt, agent_info = agent.step(obs_pyt, act_pyt, rew_pyt)
+        action = numpify_buffer(act_pyt)
+        start = time.time()
+        obs, reward, done, info = env.step(action[0])
         done = False
         step = 0
         reward_sum = 0
+        env.render()
+        # time.sleep(5)
         while not done:
             loop_start = time.time()
             step += 1
