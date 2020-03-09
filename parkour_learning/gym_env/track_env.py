@@ -109,7 +109,7 @@ class TrackEnv(gym.Env):
         return observation
 
     def compute_done(self) -> bool:
-        done = self.last_100_goal_distances[-1] < 1
+        done = False
         if len(self.last_100_goal_distances) == self.last_100_goal_distances.maxlen:
             done = (self.last_100_goal_distances[0] - self.last_100_goal_distances[-1]) < 1
         if self.step_in_episode > self.max_num_steps:
