@@ -34,12 +34,11 @@ class TrackEnv(gym.Env):
         self._plane_id = self._pybullet_client.loadURDF("plane_narrow.urdf", [13, 0, 0],
                                                         self._pybullet_client.getQuaternionFromEuler(
                                                             [-math.pi * 0.5, 0, 0]), globalScaling=1.00)
-        # self._pybullet_client.loadURDF('track.urdf', useFixedBase=1, basePosition=(7, 0, 0), baseOrientation=(0, 0, 0, -1))
         track_id = self._pybullet_client.loadSDF('RoboyParkourTrack/model.sdf')[0]
         self._pybullet_client.resetBasePositionAndOrientation(track_id, [5, 0, -1.8], [0, 0, 0, 1])
         self.humanoid = Humanoid(self._pybullet_client, time_step_length=self.timestep_length)
         self._pybullet_client.setGravity(0, -9.8, 0)
-        # self._pybullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.9)
+        self._pybullet_client.changeDynamics(self._plane_id, linkIndex=-1, lateralFriction=0.95)
         # self._humanoid = HumanoidMimic(self._pybullet_client, self.mocap_objects[0], self.timestep_length, False)
         self._pybullet_client.setTimeStep(self.timestep_length)
         self.action_dim = 43
