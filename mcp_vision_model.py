@@ -9,7 +9,7 @@ from rlpyt.models.conv2d import Conv2dModel
 
 # MCP models with convolutional layers for goal observation
 
-class PiMCPModel(torch.nn.Module):
+class PiMcpVisionModel(torch.nn.Module):
 
     def __init__(
             self,
@@ -122,7 +122,7 @@ class PiMCPModel(torch.nn.Module):
         return snapshot_dict
 
 
-class QofMCPModel(torch.nn.Module):
+class QofMcpVisionModel(torch.nn.Module):
 
     def __init__(
             self,
@@ -170,7 +170,7 @@ class QofMCPModel(torch.nn.Module):
         return q
 
 
-class PPOMcpModel(torch.nn.Module):
+class PpoMcpVisionModel(torch.nn.Module):
 
     def __init__(
             self,

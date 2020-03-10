@@ -1,7 +1,7 @@
 from train import build_and_train
 import torch
 import argparse
-from mcp_vision_model import PiMCPModel, QofMCPModel, PPOMcpModel
+from mcp_vision_model import PiMcpVisionModel, QofMcpVisionModel, PpoMcpVisionModel
 
 algo = 'ppo'
 
@@ -34,21 +34,21 @@ if __name__ == "__main__":
         if algo == 'sac':
             model_snapshot_dict = snapshot['agent_state_dict']['model']
             snapshot['agent_state_dict'] = dict()
-            snapshot['agent_state_dict']['model'] = PiMCPModel.remove_gating_from_snapshot(model_snapshot_dict)
+            snapshot['agent_state_dict']['model'] = PiMcpVisionModel.remove_gating_from_snapshot(model_snapshot_dict)
         elif algo == 'ppo':
             model_snapshot_dict = snapshot['agent_state_dict']
             snapshot['agent_state_dict'] = dict()
-            snapshot['agent_state_dict'] = PPOMcpModel.remove_gating_from_snapshot(model_snapshot_dict)
+            snapshot['agent_state_dict'] = PpoMcpVisionModel.remove_gating_from_snapshot(model_snapshot_dict)
         snapshot['optimizer_state_dict'] = None
 
     if algo == 'sac':
-        config_update = dict(sac_agent_kwargs=dict(ModelCls=PiMCPModel, QModelCls=QofMCPModel,
+        config_update = dict(sac_agent_kwargs=dict(ModelCls=PiMcpVisionModel, QModelCls=QofMcpVisionModel,
                                                    model_kwargs=dict(freeze_primitives=True)),
                              sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
                              sac_kwargs=dict(discount=0.99),
                              algo='sac')
     elif algo == 'ppo':
-        config_update = dict(ppo_agent_kwargs=dict(ModelCls=PPOMcpModel, model_kwargs=dict(freeze_primitives=True)),
+        config_update = dict(ppo_agent_kwargs=dict(ModelCls=PpoMcpVisionModel, model_kwargs=dict(freeze_primitives=True)),
                              sampler_kwargs=dict(env_kwargs=dict(id='TrackEnv-v0')),
                              ppo_kwargs=dict(discount=0.99, learning_rate=5e-5),
                              algo='ppo')

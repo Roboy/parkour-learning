@@ -14,7 +14,7 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 class PrimitivePretrainingEnv(gym.Env):
     # select list of mocap files to use
-    mocap_files = ['run.txt', 'walk.txt' , 'jump_and_roll.txt', 'vaulting.txt']
+    mocap_files = ['walk.txt']# ['run.txt', 'walk.txt' , 'jump_and_roll.txt', 'vaulting.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):

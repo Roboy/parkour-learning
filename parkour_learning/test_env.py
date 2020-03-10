@@ -2,8 +2,8 @@ import parkour_learning
 import time
 import gym
 
-env = gym.make('HumanoidPrimitivePretraining-v0', render=True)
-# env = gym.make('TrackEnv-v0', render=True)
+# env = gym.make('HumanoidPrimitivePretraining-v0', render=True)
+env = gym.make('TrackEnv-v0', render=True)
 
 
 while True:
