@@ -15,6 +15,7 @@ from mcp_model import PiMCPModel, QofMCPModel, PPOMcpModel
 from mcp_vision_model import PiMcpVisionModel, QofMcpVisionModel, PpoMcpVisionModel
 from rlpyt.agents.pg.mujoco import MujocoLstmAgent, MujocoFfAgent
 # from mcp_vision_model import PiMcpVisionModel, QofMcpVisionModel
+from vision_models import PiVisionModel, QofMuVisionModel
 
 def simulate_policy(env, agent):
     # snapshot = torch.load(path_to_params, map_location=torch.device('cpu'))
@@ -78,7 +79,7 @@ if __name__ == "__main__":
             agent = MujocoFfAgent(ModelCls=PPOMcpModel)
     else:
         if args.env == 'TrackEnv-v0':
-            agent = SacAgent(ModelCls=PiMcpVisionModel, QModelCls=QofMcpVisionModel)
+            agent = SacAgent(ModelCls=PiVisionModel, QModelCls=QofMuVisionModel)
         else:
             agent = SacAgent(ModelCls=PiMCPModel, QModelCls=QofMCPModel)
 
