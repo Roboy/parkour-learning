@@ -8,9 +8,9 @@ It uses the rlpyt library for Deep RL (https://github.com/astooke/rlpyt).
 
 ## Install
 `
-git clone https://github.com/Roboy/parkour_learning
-cd parkour_learning
-pip install -e .
+git clone https://github.com/Roboy/parkour_learning  
+cd parkour_learning  
+pip install -e .  
 `
 
 ## Train policies
