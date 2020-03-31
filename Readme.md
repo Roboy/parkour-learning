@@ -7,11 +7,9 @@ We use the multiplicate compositional policies scheme to combine these policies 
 It uses the rlpyt library for Deep RL (https://github.com/astooke/rlpyt).
 
 ## Install
-`
-git clone https://github.com/Roboy/parkour_learning  
-cd parkour_learning  
-pip install -e .  
-`
+`git clone https://github.com/Roboy/parkour_learning`  
+`cd parkour_learning`  
+`pip install -e .`  
 
 ## Train policies
 train.py contains code to train the primitives. train_composite.py is a script that trains the composite policy using
