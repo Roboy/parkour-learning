@@ -5,7 +5,7 @@ This is done by first training primitive policies on mimicking motion
 capture data from real humans (see https://xbpeng.github.io/projects/DeepMimic/index.html).
 We use the multiplicate compositional policies scheme to combine these policies (https://xbpeng.github.io/projects/MCP/index.html).
 
-##Train policies
+## Train policies
 train.py contains code to train the primitives. train_composite.py is a script that trains the composite policy using
 the pretrained primitives.
 
