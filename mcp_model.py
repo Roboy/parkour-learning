@@ -5,6 +5,10 @@ from torch import sigmoid, relu, exp
 from torch.nn import Linear
 from torch.nn import ModuleList
 
+"""
+pytorch models for the multiplicative compositional policies scheme.
+PiMCPModel and QofMCPModel can be used for SAC or TD3 algorithms
+"""
 
 class PiMCPModel(torch.nn.Module):
 

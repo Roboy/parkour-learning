@@ -2,7 +2,9 @@ from rlpyt.agents.pg.mujoco import MujocoFfAgent
 import numpy as np
 from rlpyt.distributions.gaussian import Gaussian, DistInfoStd
 from typing import Dict
-
+"""
+Subclass of default rlpyt PPO agent. This allows to load state_dicts that contain only part of the model parameters
+"""
 
 class McpPPOAgent(MujocoFfAgent):
     def __init__(self, ModelCls=None, model_kwargs=None, initial_model_state_dict=None):

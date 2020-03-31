@@ -7,7 +7,8 @@ from torch.nn import ModuleList
 from rlpyt.models.conv2d import Conv2dModel
 
 
-# MCP models with convolutional layers for goal observation
+# MCP models with convolutional layers for goal observation. Currently it does not use vision input since it doesn't
+# even learn to run without vision
 
 class PiMcpVisionModel(torch.nn.Module):
 
