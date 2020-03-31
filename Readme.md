@@ -4,6 +4,7 @@ The goal of this project is to train a humanoid robot in simulation on an obstac
 This is done by first training primitive policies on mimicking motion
 capture data from real humans (see https://xbpeng.github.io/projects/DeepMimic/index.html).
 We use the multiplicate compositional policies scheme to combine these policies (https://xbpeng.github.io/projects/MCP/index.html).
+It uses the rlpyt library for Deep RL (https://github.com/astooke/rlpyt).
 
 ## Train policies
 train.py contains code to train the primitives. train_composite.py is a script that trains the composite policy using
