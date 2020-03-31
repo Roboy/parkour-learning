@@ -27,15 +27,18 @@ or
 
 There are also policies trained using the multiplicative compositional policy scheme. To visualize the composed policy
 trained on the TrackEnv run (This one is however not working so well):  
-python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_composite.pkl --env TrackEnv-v0
+`python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_composite.pkl --env TrackEnv-v0`
 
-You can also view some pretrained MCP policies. They were each only trained on one motion
-capture file because otherwise it learned very poorly. To visualize the one only trained
-on the run.txt mocap file, you have to edit the parkour_learning/gym_env/primitive_pretraining_env.py file.
-Make sure that the class attribute mocap_files is set to ['run.txt']. Then execute:  
- python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_pretraining_run.pkl
-If you want to view the walking policy set mocap_files to ['walk.txt'] and execute (This one is not very good):  
- python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_pretraining_walking.pkl
-If you want to view the vaulting policy set mocap_files to ['vaulting.txt'] and execute (This one is not very good):  
- python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_pretraining_vaulting.pkl
+You can also view some pretrained MCP policies. They were each only trained on one motion capture file because otherwise it learned very poorly. To visualize the one only trained on the run.txt mocap file, you have to edit the `parkour_learning/gym_env/primitive_pretraining_env.p` file.
+
+Make sure that the class attribute `mocap_files` is set to `['run.txt']`. Then execute:  
+ `python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_pretraining_run.pkl`
+
+
+If you want to view the walking policy set `mocap_files` to `['walk.txt']` and execute (This one is not very good):  
+ `python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_pretraining_walking.pkl`
+
+
+If you want to view the vaulting policy set mocap_files to `['vaulting.txt']` and execute (This one is not very good):  
+ `python simulate_policy.py --algo ppo --path policies_archive/ppo_mcp_pretraining_vaulting.pkl`
 
