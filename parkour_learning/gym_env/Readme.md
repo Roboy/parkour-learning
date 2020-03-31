@@ -1,1 +1,1 @@
-A large part of this folder is copied from Bullet (https://github.com/bulletphysics/bullet3)
+A large part of bullet_data, motion_capture_data.py, pd_control and a large part of the deep mimic reward function was copied from Bullet (https://github.com/bulletphysics/bullet3).

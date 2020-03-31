@@ -59,7 +59,6 @@ class TrackEnv(gym.Env):
         goal_distance = np.linalg.norm(np.array(self.humanoid.get_position()) - self.target_pos)
         return goal_distance
 
-
     def step(self, action):
         self.step_in_episode += 1
         desired_pose = np.array(self.humanoid.convertActionToPose(action))

@@ -31,16 +31,25 @@ class MotionCaptureData(object):
         return self._motion_data['Loop'] == 'wrap'
 
     def getCycleTime(self):
+        """
+        returns cycle time length that can be useful for cyclic motions
+        """
         keyFrameDuration = self.key_frame_duration()
         cycleTime = keyFrameDuration * (self.num_frames() - 1)
         return cycleTime
 
     def calc_cycle_count(self, simTime, cycleTime):
+        """
+        calculates how many cycles have been completed at simTime
+        """
         phases = simTime / cycleTime
         count = math.floor(phases)
         return count
 
     def compute_cycle_offset(self):
+        """
+        computes the x,y distance the humanoid travels in one cycle
+        """
         first_frame_data = self._motion_data['Frames'][0]
         lastFrame = self.num_frames() - 1
         last_frame_data = self._motion_data['Frames'][lastFrame]
@@ -50,6 +59,9 @@ class MotionCaptureData(object):
         return cycle_offset
 
     def get_objects_dict(self) -> dict:
+        """
+        returns dict of objects that are needed for mocap
+        """
         if 'Objects' in self._motion_data.keys():
             return self._motion_data['Objects']
         else:

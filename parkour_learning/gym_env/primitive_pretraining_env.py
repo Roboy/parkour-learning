@@ -14,7 +14,7 @@ from parkour_learning.gym_env.humanoid import Humanoid
 
 class PrimitivePretrainingEnv(gym.Env):
     # select list of mocap files to use
-    mocap_files = ['walk.txt']# ['run.txt', 'walk.txt' , 'jump_and_roll.txt', 'vaulting.txt']
+    mocap_files = ['vaulting.txt']  # ['run.txt', 'walk.txt' , 'jump_and_roll.txt', 'vaulting.txt']
     mocap_folder = osp.join(osp.dirname(__file__), '../motions/')
 
     def __init__(self, render=False):
@@ -198,26 +198,21 @@ class PrimitivePretrainingEnv(gym.Env):
         return np.array(next_joint_positions + next_next_joint_positions)
 
     def get_reward(self):
-        # from DeepMimic double cSceneImitate::CalcRewardImitate
-        # todo: compensate for ground height in some parts, once we move to non-flat terrain
         pose_w = 0.65  # 0.5
         vel_w = 0.1  # 0.05
         end_eff_w = 0.15
         root_w = 0.1  # 0.2
-        com_w = 0  # 0.1
 
-        total_w = pose_w + vel_w + end_eff_w + root_w + com_w
+        total_w = pose_w + vel_w + end_eff_w + root_w
         pose_w /= total_w
         vel_w /= total_w
         end_eff_w /= total_w
         root_w /= total_w
-        com_w /= total_w
 
         pose_scale = 2
         vel_scale = 0.1
         end_eff_scale = 40
         root_scale = 5
-        com_scale = 10
         err_scale = 1
 
         reward = 0
@@ -225,9 +220,6 @@ class PrimitivePretrainingEnv(gym.Env):
         pose_err = 0
         vel_err = 0
         end_eff_err = 0
-        root_err = 0
-        com_err = 0
-        heading_err = 0
 
         # create a mimic reward, comparing the dynamics humanoid with a kinematic one
 
@@ -279,14 +271,10 @@ class PrimitivePretrainingEnv(gym.Env):
             else:
                 simJointInfo = self.bullet_client.getJointStateMultiDof(self.humanoid.humanoid_uid, j)
 
-            # print("simJointInfo.pos=",simJointInfo[0])
-            # print("simJointInfo.vel=",simJointInfo[1])
             if useArray:
                 kinJointInfo = kinJointStates[j]
             else:
                 kinJointInfo = self.bullet_client.getJointStateMultiDof(self.mocap_humanoid.humanoid_uid, j)
-            # print("kinJointInfo.pos=",kinJointInfo[0])
-            # print("kinJointInfo.vel=",kinJointInfo[1])
             if len(simJointInfo[0]) == 1:
                 angle = simJointInfo[0][0] - kinJointInfo[0][0]
                 curr_pose_err = angle * angle
@@ -330,35 +318,19 @@ class PrimitivePretrainingEnv(gym.Env):
         if num_end_effs > 0:
             end_eff_err /= num_end_effs
 
-        # double root_ground_h0 = mGround->SampleHeight(sim_char.GetRootPos())
-        # double root_ground_h1 = kin_char.GetOriginPos()[1]
-        # root_pos0[1] -= root_ground_h0
-        # root_pos1[1] -= root_ground_h1
         root_pos_diff = [
             rootPosSim[0] - rootPosKin[0], rootPosSim[1] - rootPosKin[1], rootPosSim[2] - rootPosKin[2]
         ]
         root_pos_err = root_pos_diff[0] * root_pos_diff[0] + root_pos_diff[1] * root_pos_diff[
             1] + root_pos_diff[2] * root_pos_diff[2]
-        #
-        # root_rot_err = cMathUtil::QuatDiffTheta(root_rot0, root_rot1)
-        # root_rot_err *= root_rot_err
-
-        # root_vel_err = (root_vel1 - root_vel0).squaredNorm()
-        # root_ang_vel_err = (root_ang_vel1 - root_ang_vel0).squaredNorm()
-
         root_err = root_pos_err + 0.1 * root_rot_err + 0.01 * root_vel_err + 0.001 * root_ang_vel_err
 
-        # com_err = 0.1 * (com_vel1_world - com_vel0_world).squaredNorm()
-
-        # print("pose_err=",pose_err)
-        # print("vel_err=",vel_err)
         pose_reward = math.exp(-err_scale * pose_scale * pose_err)
         vel_reward = math.exp(-err_scale * vel_scale * vel_err)
         end_eff_reward = math.exp(-err_scale * end_eff_scale * end_eff_err)
         root_reward = math.exp(-err_scale * root_scale * root_err)
-        com_reward = math.exp(-err_scale * com_scale * com_err)
 
-        reward = pose_w * pose_reward + vel_w * vel_reward + end_eff_w * end_eff_reward + root_w * root_reward + com_w * com_reward
+        reward = pose_w * pose_reward + vel_w * vel_reward + end_eff_w * end_eff_reward + root_w * root_reward
 
         # pose_reward,vel_reward,end_eff_reward, root_reward, com_reward);
         # print("reward=",reward)
