@@ -6,6 +6,13 @@ capture data from real humans (see https://xbpeng.github.io/projects/DeepMimic/i
 We use the multiplicate compositional policies scheme to combine these policies (https://xbpeng.github.io/projects/MCP/index.html).
 It uses the rlpyt library for Deep RL (https://github.com/astooke/rlpyt).
 
+## Install
+`
+git clone https://github.com/Roboy/parkour_learning
+cd parkour_learning
+pip install -e .
+`
+
 ## Train policies
 train.py contains code to train the primitives. train_composite.py is a script that trains the composite policy using
 the pretrained primitives.
